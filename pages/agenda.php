@@ -1,60 +1,150 @@
-<?php include '../includes/header.php'; ?>
+<?php
+include '../includes/header.php';
 
-<main class="container-fluid p-0">
-    <!-- Header Agenda -->
-    <section class="hero-section text-center py-5" style="background: linear-gradient(135deg, #FFD700, #FF6B6B);">
-        <div class="container py-5">
-            <h1 class="display-4 text-white animate__animated animate__bounceIn" style="text-shadow: 2px 2px #333;">Agenda Kegiatan</h1>
-        </div>
-    </section>
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "tk_pertiwi_db";
 
-    <!-- Countdown Timer -->
-    <section class="countdown-section py-5" style="background: #FFF3E0;">
-        <div class="container text-center">
-            <h2 class="mb-4 text-success animate__animated animate__fadeInUp">Hari Anak Nasional 2026</h2>
-            <p class="lead mb-4">Sisa waktu sampai 23 Juli 2026:</p>
-            <div id="countdown" class="d-flex justify-content-center gap-3 mb-4" style="font-size: 2rem; font-weight: bold; color: #FF4500;"></div>
-            <p class="text-muted">Siap-siap bareng anak-anak untuk perayaan seru!</p>
+try {
+    $pdo = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch(PDOException $e) {
+    error_log("Koneksi gagal: " . $e->getMessage());
+    die("Koneksi gagal: " . $e->getMessage());
+}
 
-            <script>
-                // Set target date (23 Juli 2026, 00:00 WIB)
-                const targetDate = new Date("July 23, 2026 00:00:00 GMT+0700").getTime();
+$stmt = $pdo->query("SELECT * FROM agenda_kegiatan ORDER BY tanggal DESC");
+$agenda = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
 
-                // Update countdown every 1 second
-                const countdown = setInterval(() => {
-                    const now = new Date().getTime();
-                    const distance = targetDate - now;
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Kegiatan - TK Pertiwi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #E0F7FA;
+        }
+        .agenda-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .agenda-img {
+            max-width: 100%;
+            border-radius: 10px;
+        }
+        .card-header {
+            background: linear-gradient(45deg, #1E90FF, #00B7EB);
+            color: white;
+            font-weight: 600;
+            border: none;
+        }
+        .countdown {
+            display: flex;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #007bff;
+            font-weight: 600;
+        }
+        .countdown span {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .expired {
+            color: #dc3545;
+            font-weight: 600;
+        }
 
-                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        @media (max-width: 768px) {
+            .card-title { font-size: 1.1rem; }
+            .card-text { font-size: 0.9rem; }
+            .countdown { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+    <main class="container-fluid p-0">
+        <section class="hero-section text-center py-5">
+            <div class="container py-5">
+                <h1 class="display-4 animate__animated animate__fadeIn" style="color: #007bff;">Agenda Kegiatan TK Pertiwi</h1>
+                <p class="lead animate__animated animate__fadeIn" style="color: #007bff; animation-delay: 0.2s;">Informasi kegiatan, acara tahunan, dan jadwal pembagian rapot</p>
+            </div>
+        </section>
 
-                    document.getElementById("countdown").innerHTML =
-                        `<div>${days}<br>Hari</div>` +
-                        `<div>${hours}<br>Jam</div>` +
-                        `<div>${minutes}<br>Menit</div>` +
-                        `<div>${seconds}<br>Detik</div>`;
+        <section class="agenda-section py-5">
+            <div class="container">
+                <div class="row">
+                    <?php foreach ($agenda as $index => $item): ?>
+                        <div class="col-md-4">
+                            <div class="card agenda-card animate__animated animate__fadeInUp" style="animation-delay: 0.<?php echo ($index + 1) * 2; ?>s;">
+                                <?php if ($item['foto']): ?>
+                                    <img src="/project-semester-3-/uploads/<?php echo htmlspecialchars($item['foto']); ?>" class="card-img-top agenda-img" alt="<?php echo htmlspecialchars($item['judul']); ?>">
+                                <?php endif; ?>
+                                <div class="card-body">
+                                    <h5 class="card-title animate__animated animate__slideInUp" style="animation-delay: 0.<?php echo ($index + 1) * 2 + 0.1; ?>s;"><?php echo htmlspecialchars($item['judul']); ?></h5>
+                                    <p class="card-text animate__animated animate__slideInUp" style="animation-delay: 0.<?php echo ($index + 1) * 2 + 0.2; ?>s;"><?php echo htmlspecialchars($item['deskripsi']); ?></p>
+                                    <p class="card-text animate__animated animate__slideInUp" style="animation-delay: 0.<?php echo ($index + 1) * 2 + 0.3; ?>s;"><small class="text-muted">Tanggal: <?php echo date('d-m-Y', strtotime($item['tanggal'])); ?></small></p>
+                                    <p class="card-text animate__animated animate__slideInUp" style="animation-delay: 0.<?php echo ($index + 1) * 2 + 0.4; ?>s;"><small class="text-muted">Tipe: <?php echo ucfirst($item['tipe']); ?></small></p>
+                                    <div class="countdown animate__animated animate__fadeIn" id="countdown-<?php echo $item['id']; ?>" style="animation-delay: 0.<?php echo ($index + 1) * 2 + 0.5; ?>s;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+    </main>
 
-                    if (distance < 0) {
-                        clearInterval(countdown);
-                        document.getElementById("countdown").innerHTML = "Event Sudah Dimulai!";
-                    }
-                }, 1000);
-            </script>
-        </div>
-    </section>
+    <footer class="text-center py-3">
+        <p class="animate__animated animate__fadeIn" style="animation-delay: 0.2s;">&copy; 2025 TK Pertiwi</p>
+    </footer>
 
-    <!-- Agenda Tambahan (Opsional) -->
-    <section class="agenda-list py-5" style="background: #E0F7FA;">
-        <div class="container">
-            <h2 class="text-center mb-4 text-info animate__animated animate__slideInDown">Jadwal Lain</h2>
-            <ul class="list-group">
-                <li class="list-group-item">Pembagian Raport: 15 Desember 2025</li>
-                <li class="list-group-item">Lomba Lari: 10 Januari 2026</li>
-            </ul>
-        </div>
-    </section>
-</main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        <?php foreach ($agenda as $item): ?>
+            // Set tanggal target untuk agenda
+            const targetDate<?php echo $item['id']; ?> = new Date('<?php echo $item['tanggal']; ?> 00:00:00').getTime();
+            
+            // Update countdown setiap detik
+            const countdownFunction<?php echo $item['id']; ?> = setInterval(function() {
+                const now = new Date().getTime();
+                const distance = targetDate<?php echo $item['id']; ?> - now;
 
-<?php include '../includes/footer.php'; ?>
+                // Hitung hari, jam, menit, dan detik
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                // Tampilkan countdown
+                const countdownElement = document.getElementById('countdown-<?php echo $item['id']; ?>');
+                if (distance > 0) {
+                    countdownElement.innerHTML = `
+                        <span>${days} Hari</span>
+                        <span>${hours} Jam</span>
+                        <span>${minutes} Menit</span>
+                        <span>${seconds} Detik</span>
+                    `;
+                } else {
+                    clearInterval(countdownFunction<?php echo $item['id']; ?>);
+                    countdownElement.innerHTML = '<span class="expired">Acara Telah Berlangsung!</span>';
+                }
+            }, 1000);
+        <?php endforeach; ?>
+    });
+    </script>
+</body>
+</html>

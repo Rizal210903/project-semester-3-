@@ -1,56 +1,90 @@
 <?php
-// Inisialisasi variabel
-$name = $email = $birthdate = $kk_number = $address = $whatsapp = "";
-$errors = [];
-$registration_id = uniqid(); // ID unik buat pendaftaran
-$photo_path = "";
+session_start();
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Ambil data dari form
-    $name = htmlspecialchars($_POST['name'] ?? '');
-    $email = htmlspecialchars($_POST['email'] ?? '');
-    $birthdate = htmlspecialchars($_POST['birthdate'] ?? '');
-    $kk_number = htmlspecialchars($_POST['kk_number'] ?? '');
-    $address = htmlspecialchars($_POST['address'] ?? '');
-    $whatsapp = htmlspecialchars($_POST['whatsapp'] ?? '');
 
-    // Handle upload foto
-    if (isset($_FILES['photo']) && $_FILES['photo']['error'] == 0) {
-        $allowed = ['jpg', 'jpeg', 'png'];
-        $filename = $_FILES['photo']['name'];
-        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        if (in_array($ext, $allowed)) {
-            $new_name = $registration_id . "_photo." . $ext;
-            $upload_dir = $_SERVER['DOCUMENT_ROOT'] . '/tk-pertiwi/uploads/';
-            if (!file_exists($upload_dir)) mkdir($upload_dir, 0777, true);
-            $photo_path = $upload_dir . $new_name;
-            move_uploaded_file($_FILES['photo']['tmp_name'], $photo_path);
-            $photo_path = '/tk-pertiwi/uploads/' . $new_name; // Path relatif
-        } else {
-            $errors[] = "Format foto harus JPG, JPEG, atau PNG.";
-        }
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "tk_pertiwi_db";
+$error = ""; // Inisialisasi $error
+
+try {
+    $pdo = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    error_log("Koneksi DB berhasil");
+} catch(PDOException $e) {
+    error_log("Koneksi gagal: " . $e->getMessage());
+    die("Koneksi gagal: " . $e->getMessage());
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nama_anak = trim($_POST['nama_anak'] ?? '');
+    $nama_ortu = trim($_POST['nama_ortu'] ?? '');
+    $tanggal_lahir_anak = trim($_POST['tanggal_lahir_anak'] ?? '');
+    $alamat = trim($_POST['alamat'] ?? '');
+    $nomor_telepon = trim($_POST['nomor_telepon'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+
+    // Log input untuk debug
+    error_log("Input: nama_anak=$nama_anak, nama_ortu=$nama_ortu, tanggal_lahir_anak=$tanggal_lahir_anak, alamat=$alamat, nomor_telepon=$nomor_telepon, email=$email");
+
+    // Validasi kolom wajib
+    if (empty($nama_anak) || empty($nama_ortu) || empty($tanggal_lahir_anak)) {
+        $error = "Nama anak, nama orang tua, dan tanggal lahir wajib diisi!";
+        error_log("Validasi gagal: $error");
     } else {
-        $errors[] = "Foto wajib diunggah.";
-    }
+        // Handle file uploads
+        $upload_dir = '../Uploads/';
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0755, true);
+            error_log("Folder Uploads dibuat: $upload_dir");
+        }
+        $akta_kelahiran = '';
+        $kartu_keluarga = '';
+        $pas_foto = '';
+        $surat_sehat = '';
+        $allowed_types = ['image/jpeg', 'image/png', 'application/pdf'];
+        $max_size = 2 * 1024 * 1024; // 2MB
 
-    // Validasi sederhana
-    if (empty($name)) $errors[] = "Nama harus diisi.";
-    if (empty($email)) $errors[] = "Email harus diisi.";
-    if (empty($birthdate)) $errors[] = "Tanggal lahir harus diisi.";
-    if (empty($kk_number)) $errors[] = "Nomor KK harus diisi.";
-    if (empty($address)) $errors[] = "Alamat harus diisi.";
-    if (empty($whatsapp)) $errors[] = "Nomor WhatsApp harus diisi.";
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = "Format email tidak valid.";
-    if (!preg_match('/^\+?([0-9]{10,13})$/', $whatsapp)) $errors[] = "Nomor WhatsApp tidak valid (gunakan 10-13 digit, bisa dengan +).";
+        foreach (['akta_kelahiran', 'kartu_keluarga', 'pas_foto', 'surat_sehat'] as $field) {
+            if (isset($_FILES[$field]) && $_FILES[$field]['error'] === UPLOAD_ERR_OK) {
+                $file_type = $_FILES[$field]['type'];
+                $file_size = $_FILES[$field]['size'];
+                if (!in_array($file_type, $allowed_types)) {
+                    $error = "File $field harus berupa PDF, JPG, atau PNG!";
+                    error_log("File $field ditolak: tipe tidak diizinkan ($file_type)");
+                } elseif ($file_size > $max_size) {
+                    $error = "File $field terlalu besar, maksimum 2MB!";
+                    error_log("File $field ditolak: ukuran terlalu besar ($file_size bytes)");
+                } else {
+                    $file_name = time() . '_' . $field . '_' . basename($_FILES[$field]['name']);
+                    $file_path = $upload_dir . $file_name;
+                    if (move_uploaded_file($_FILES[$field]['tmp_name'], $file_path)) {
+                        $$field = $file_name;
+                        error_log("File $field berhasil diupload: $file_path");
+                    } else {
+                        $error = "Gagal upload file $field!";
+                        error_log("Gagal upload file $field: " . $_FILES[$field]['error']);
+                    }
+                }
+            }
+        }
 
-    // Kalo ga ada error, proses pendaftaran
-    if (empty($errors)) {
-        // Simpan ke file (placeholder, nanti ke database)
-        $data = "ID: $registration_id, Nama: $name, Email: $email, Tanggal Lahir: $birthdate, Nomor KK: $kk_number, Alamat: $address, Nomor WhatsApp: $whatsapp, Foto: $photo_path, Tanggal Pendaftaran: " . date('Y-m-d H:i:s') . "\n";
-        file_put_contents('registrations.txt', $data, FILE_APPEND);
-        // Kirim nama ke thank-you
-        header("Location: thank-you.php?success=1&name=" . urlencode($name));
-        exit();
+        if (!$error) {
+            try {
+                $stmt = $pdo->prepare("INSERT INTO pendaftaran (nama_anak, nama_ortu, tanggal_lahir_anak, alamat, nomor_telepon, email, akta_kelahiran, kartu_keluarga, pas_foto, surat_sehat, tanggal_daftar, status_pembayaran) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'belum_bayar')");
+                $stmt->execute([$nama_anak, $nama_ortu, $tanggal_lahir_anak, $alamat, $nomor_telepon, $email, $akta_kelahiran, $kartu_keluarga, $pas_foto, $surat_sehat]);
+                $last_id = $pdo->lastInsertId();
+                error_log("Data berhasil disimpan, ID: $last_id");
+                $_SESSION['pendaftaran_id'] = $last_id;
+                $_SESSION['user_name'] = $nama_ortu;
+                header('Location: /project-semester-3-/pages/payment.php');
+                exit;
+            } catch(PDOException $e) {
+                $error = "Gagal simpan data: " . $e->getMessage();
+                error_log("Insert error: " . $e->getMessage());
+            }
+        }
     }
 }
 ?>
@@ -60,85 +94,106 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pendaftaran TK Pertiwi</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Pendaftaran - TK Pertiwi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
+            font-family: 'Poppins', sans-serif;
             background: #E0F7FA;
-            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         .form-container {
-            max-width: 500px;
-            margin: 50px auto;
-            padding: 20px;
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        .form-control {
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border: 2px solid #e0e0e0;
+            padding: 12px;
         }
-        .form-container h2 {
-            color: #1E90FF;
-            margin-bottom: 20px;
-        }
-        .error {
-            color: red;
-            font-size: 0.9rem;
-            margin-top: 5px;
+        .form-control:focus {
+            border-color: #1E90FF;
+            box-shadow: 0 0 0 0.2rem rgba(30, 144, 255, 0.25);
         }
         .btn-primary {
-            background-color: #1E90FF;
+            background: linear-gradient(45deg, #1E90FF, #00B7EB);
             border: none;
-            padding: 10px 20px;
+            border-radius: 10px;
+            padding: 12px 30px;
+            width: 100%;
         }
         .btn-primary:hover {
-            background-color: #104E8B;
+            background: linear-gradient(45deg, #104E8B, #009ACD);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(30, 144, 255, 0.4);
         }
     </style>
 </head>
 <body>
     <div class="form-container">
-        <h2 class="text-center">Form Pendaftaran TK Pertiwi</h2>
-        <?php
-        if (!empty($errors)) {
-            echo '<div class="alert alert-danger">';
-            foreach ($errors as $error) {
-                echo "<p class='error'>$error</p>";
-            }
-            echo '</div>';
-        }
-        ?>
-        <form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" enctype="multipart/form-data">
+        <h2 class="text-center mb-4 text-primary">Form Pendaftaran TK Pertiwi</h2>
+        
+        <?php if ($error): ?>
+            <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
+        <?php endif; ?>
+        
+        <form method="POST" enctype="multipart/form-data">
             <div class="mb-3">
-                <label for="name" class="form-label">Nama Lengkap</label>
-                <input type="text" class="form-control" id="name" name="name" value="<?php echo $name; ?>" required>
+                <label for="nama_anak" class="form-label">Nama Anak *</label>
+                <input type="text" class="form-control" id="nama_anak" name="nama_anak" value="<?php echo htmlspecialchars($nama_anak ?? ''); ?>" required>
+            </div>
+            <div class="mb-3">
+                <label for="nama_ortu" class="form-label">Nama Orang Tua *</label>
+                <input type="text" class="form-control" id="nama_ortu" name="nama_ortu" value="<?php echo htmlspecialchars($nama_ortu ?? ''); ?>" required>
+            </div>
+            <div class="mb-3">
+                <label for="tanggal_lahir_anak" class="form-label">Tanggal Lahir Anak *</label>
+                <input type="date" class="form-control" id="tanggal_lahir_anak" name="tanggal_lahir_anak" value="<?php echo htmlspecialchars($tanggal_lahir_anak ?? ''); ?>" required>
+            </div>
+            <div class="mb-3">
+                <label for="alamat" class="form-label">Alamat</label>
+                <textarea class="form-control" id="alamat" name="alamat"><?php echo htmlspecialchars($alamat ?? ''); ?></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="nomor_telepon" class="form-label">Nomor Telepon</label>
+                <input type="text" class="form-control" id="nomor_telepon" name="nomor_telepon" value="<?php echo htmlspecialchars($nomor_telepon ?? ''); ?>">
             </div>
             <div class="mb-3">
                 <label for="email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="email" name="email" value="<?php echo $email; ?>" required>
+                <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($email ?? ''); ?>">
             </div>
             <div class="mb-3">
-                <label for="birthdate" class="form-label">Tanggal Lahir</label>
-                <input type="date" class="form-control" id="birthdate" name="birthdate" value="<?php echo $birthdate; ?>" required>
+                <label for="akta_kelahiran" class="form-label">Fotokopi Akta Kelahiran</label>
+                <input type="file" class="form-control" id="akta_kelahiran" name="akta_kelahiran" accept=".pdf,.jpg,.jpeg,.png">
             </div>
             <div class="mb-3">
-                <label for="kk_number" class="form-label">Nomor Kartu Keluarga</label>
-                <input type="text" class="form-control" id="kk_number" name="kk_number" value="<?php echo $kk_number; ?>" required>
+                <label for="kartu_keluarga" class="form-label">Fotokopi Kartu Keluarga</label>
+                <input type="file" class="form-control" id="kartu_keluarga" name="kartu_keluarga" accept=".pdf,.jpg,.jpeg,.png">
             </div>
             <div class="mb-3">
-                <label for="address" class="form-label">Alamat</label>
-                <textarea class="form-control" id="address" name="address" required><?php echo $address; ?></textarea>
+                <label for="pas_foto" class="form-label">Pas Foto 3x4</label>
+                <input type="file" class="form-control" id="pas_foto" name="pas_foto" accept=".jpg,.jpeg,.png">
             </div>
             <div class="mb-3">
-                <label for="whatsapp" class="form-label">Nomor WhatsApp</label>
-                <input type="tel" class="form-control" id="whatsapp" name="whatsapp" value="<?php echo $whatsapp; ?>" placeholder="+6281234567890" required>
+                <label for="surat_sehat" class="form-label">Surat Keterangan Sehat</label>
+                <input type="file" class="form-control" id="surat_sehat" name="surat_sehat" accept=".pdf,.jpg,.jpeg,.png">
             </div>
-            <div class="mb-3">
-                <label for="photo" class="form-label">Foto Diri (JPG, JPEG, PNG)</label>
-                <input type="file" class="form-control" id="photo" name="photo" accept=".jpg,.jpeg,.png" required>
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Daftar</button>
+            <button type="submit" class="btn btn-primary">Daftar Sekarang</button>
         </form>
+        <p class="mt-3 text-center">
+            <a href="/project-semester-3-/index.php" class="text-primary">Kembali ke Beranda</a>
+        </p>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

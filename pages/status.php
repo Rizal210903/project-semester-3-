@@ -1,72 +1,101 @@
 <?php
-// Aktifkan debugging untuk memudahkan pelacakan error
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+session_start();
+include '../includes/header.php';
+
+// Debugging ke log, bukan layar
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+ini_set('log_errors', 1);
 error_reporting(E_ALL);
 
-// Koneksi ke database
-$conn = new mysqli("localhost", "root", "", "tk_pertiwi_db");
-
-if ($conn->connect_error) {
-    $response = ['status' => 'error', 'message' => 'Koneksi database gagal: ' . $conn->connect_error];
-    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-        header('Content-Type: application/json');
-        echo json_encode($response);
-        exit;
-    } else {
-        die($response['message']);
-    }
-}
-
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "tk_pertiwi_db";
 $status_message = "";
 $email = "";
 $is_ajax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email'])) {
-    $email = $conn->real_escape_string($_POST['email']);
-    $sql = "SELECT status, reason_reject FROM siswa WHERE email = '$email'";
-    $result = $conn->query($sql);
-
-    if ($result === false) {
-        $status_message = '<h5 style="color: #FF4500;">Error</h5><p>Query gagal: ' . $conn->error . '</p>';
-    } elseif ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        $status = $row["status"];
-        $reason_reject = $row["reason_reject"];
-
-        // Simpan ke riwayat
-        $status_save = $conn->real_escape_string($status);
-        $insert_query = $conn->query("INSERT INTO status_history (email, status, checked_at) VALUES ('$email', '$status_save', NOW())");
-        if (!$insert_query) {
-            $status_message = '<h5 style="color: #FF4500;">Error</h5><p>Gagal menyimpan riwayat: ' . $conn->error . '</p>';
-        } else {
-            // Tentukan pesan berdasarkan status
-            if ($status == "diterima") {
-                $status_message = '<h5 style="color: #32CD32;">Status: Diterima</h5><p>Silakan lanjutkan pembayaran SPP</p><a href="/TK-PERTIWI/pages/pembayaran.php" class="btn btn-success">Lihat Detail Pembayaran</a>';
-            } elseif ($status == "pending") {
-                $status_message = '<h5 style="color: #FFD700;">Status: Pending</h5><p>Mohon tunggu konfirmasi dari sekolah</p>';
-            } elseif ($status == "ditolak") {
-                $status_message = '<h5 style="color: #FF4500;">Status: Ditolak</h5><p>Maaf, pendaftaran ditolak. Alasan: ' . ($reason_reject ? htmlspecialchars($reason_reject) : "Tidak ada alasan") . '</p>';
-            }
-        }
+try {
+    $pdo = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    error_log("Koneksi DB berhasil");
+} catch(PDOException $e) {
+    error_log("Koneksi gagal: " . $e->getMessage());
+    $response = ['status' => 'error', 'message' => 'Koneksi database gagal'];
+    if ($is_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
     } else {
-        $status_message = '<h5 style="color: #FF4500;">Error</h5><p>Email tidak ditemukan</p>';
+        die("Koneksi database gagal");
+    }
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email'])) {
+    $email = trim($_POST['email']);
+    try {
+        // Cek struktur tabel untuk debug
+        $stmt = $pdo->query("DESCRIBE pendaftaran");
+        $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        error_log("Kolom tabel pendaftaran: " . implode(", ", $columns));
+
+        $stmt = $pdo->prepare("SELECT id, nama_anak, nama_ortu, email, status_pembayaran, metode_pembayaran, tanggal_pembayaran, bukti_pembayaran FROM pendaftaran WHERE email = ?");
+        $stmt->execute([$email]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row) {
+            $status = $row['status_pembayaran'];
+            $pendaftaran_id = $row['id'];
+
+            // Simpan ke status_history
+            try {
+                $stmt = $pdo->prepare("INSERT INTO status_history (pendaftaran_id, email, status) VALUES (?, ?, ?)");
+                $stmt->execute([$pendaftaran_id, $email, $status]);
+                error_log("Riwayat status disimpan untuk pendaftaran_id: $pendaftaran_id");
+            } catch(PDOException $e) {
+                error_log("Gagal simpan riwayat: " . $e->getMessage());
+                $status_message = '<h5 style="color: #FF4500;">Error</h5><p>Gagal menyimpan riwayat: ' . htmlspecialchars($e->getMessage()) . '</p>';
+            }
+
+            // Tentukan pesan berdasarkan status
+            if ($status == "dibayar") {
+                $status_message = '<h5 style="color: #32CD32;">Status: Diterima</h5><p>Pembayaran diterima. Silakan hubungi sekolah untuk langkah selanjutnya.</p>';
+            } elseif ($status == "menunggu_verifikasi") {
+                $status_message = '<h5 style="color: #FFD700;">Status: Menunggu Verifikasi</h5><p>Mohon tunggu konfirmasi dari sekolah.</p>';
+            } elseif ($status == "belum_bayar") {
+                $status_message = '<h5 style="color: #FF4500;">Status: Belum Bayar</h5><p>Silakan lakukan pembayaran di <a href="/project-semester-3-/pages/payment.php" class="btn btn-success">Halaman Pembayaran</a>.</p>';
+            } elseif ($status == "ditolak") {
+                $status_message = '<h5 style="color: #FF4500;">Status: Ditolak</h5><p>Maaf, pendaftaran ditolak.</p>';
+            }
+        } else {
+            $status_message = '<h5 style="color: #FF4500;">Error</h5><p>Email tidak ditemukan.</p>';
+        }
+    } catch(PDOException $e) {
+        error_log("Query gagal: " . $e->getMessage());
+        $status_message = '<h5 style="color: #FF4500;">Error</h5><p>Query gagal: ' . htmlspecialchars($e->getMessage()) . '</p>';
     }
 
     if ($is_ajax) {
-        // Untuk request AJAX, kembalikan JSON dengan status_message dan HTML tabel riwayat
+        // Ambil riwayat untuk AJAX
         $history_html = '';
-        $history_result = $conn->query("SELECT email, status, checked_at FROM status_history ORDER BY checked_at DESC LIMIT 5");
-        if ($history_result->num_rows > 0) {
-            while ($row = $history_result->fetch_assoc()) {
-                $history_html .= "<tr><td>" . htmlspecialchars($row["email"]) . "</td><td>" . htmlspecialchars($row["status"]) . "</td><td>" . htmlspecialchars($row["checked_at"]) . "</td></tr>";
+        try {
+            $stmt = $pdo->query("SELECT email, status, checked_at FROM status_history ORDER BY checked_at DESC LIMIT 5");
+            $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if ($history) {
+                foreach ($history as $row) {
+                    $history_html .= "<tr><td>" . htmlspecialchars($row["email"]) . "</td><td>" . htmlspecialchars($row["status"]) . "</td><td>" . htmlspecialchars($row["checked_at"]) . "</td></tr>";
+                }
+            } else {
+                $history_html = "<tr><td colspan='3' class='text-center'>Belum ada riwayat</td></tr>";
             }
-        } else {
-            $history_html = "<tr><td colspan='3' class='text-center'>Belum ada riwayat</td></tr>";
+        } catch(PDOException $e) {
+            error_log("Gagal ambil history: " . $e->getMessage());
+            $history_html = "<tr><td colspan='3' class='text-center'>Gagal memuat riwayat: " . htmlspecialchars($e->getMessage()) . "</td></tr>";
         }
 
         $response = [
-            'status' => 'success',
+            'status' => $status_message ? 'success' : 'error',
             'status_message' => $status_message,
             'history_html' => $history_html
         ];
@@ -78,7 +107,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email'])) {
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -126,7 +155,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email'])) {
     </style>
 </head>
 <body>
-    <!-- Header -->
     <section class="header-section text-center py-4">
         <div class="container">
             <h1 class="display-4 text-white" style="text-shadow: 2px 2px #333;">Cek Status Pendaftaran TK Pertiwi</h1>
@@ -134,7 +162,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email'])) {
         </div>
     </section>
 
-    <!-- Form Input -->
     <section class="form-section py-5">
         <div class="container">
             <div class="card p-4 shadow-sm" style="max-width: 500px; margin: 0 auto; border-radius: 10px;">
@@ -142,7 +169,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email'])) {
                 <form method="POST" id="statusForm">
                     <div class="form-group mb-3">
                         <label for="email" class="form-label">Email:</label>
-                        <input type="email" class="form-control" id="email" name="email" placeholder="contoh@email.com" required>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="contoh@email.com" value="<?php echo htmlspecialchars($email); ?>" required>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Cek Status</button>
                     <div id="loadingSpinner" class="text-center mt-3">
@@ -156,7 +183,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email'])) {
         </div>
     </section>
 
-    <!-- Tabel Riwayat -->
     <section class="history-section py-5">
         <div class="container">
             <h4 class="mb-4">Riwayat Cek Status</h4>
@@ -170,13 +196,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email'])) {
                 </thead>
                 <tbody>
                     <?php
-                    $history_result = $conn->query("SELECT email, status, checked_at FROM status_history ORDER BY checked_at DESC LIMIT 5");
-                    if ($history_result->num_rows > 0) {
-                        while ($row = $history_result->fetch_assoc()) {
-                            echo "<tr><td>" . htmlspecialchars($row["email"]) . "</td><td>" . htmlspecialchars($row["status"]) . "</td><td>" . htmlspecialchars($row["checked_at"]) . "</td></tr>";
+                    try {
+                        $stmt = $pdo->query("SELECT email, status, checked_at FROM status_history ORDER BY checked_at DESC LIMIT 5");
+                        $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        if ($history) {
+                            foreach ($history as $row) {
+                                echo "<tr><td>" . htmlspecialchars($row["email"]) . "</td><td>" . htmlspecialchars($row["status"]) . "</td><td>" . htmlspecialchars($row["checked_at"]) . "</td></tr>";
+                            }
+                        } else {
+                            echo "<tr><td colspan='3' class='text-center'>Belum ada riwayat</td></tr>";
                         }
-                    } else {
-                        echo "<tr><td colspan='3' class='text-center'>Belum ada riwayat</td></tr>";
+                    } catch(PDOException $e) {
+                        echo "<tr><td colspan='3' class='text-center'>Gagal memuat riwayat: " . htmlspecialchars($e->getMessage()) . "</td></tr>";
+                        error_log("Gagal ambil history: " . $e->getMessage());
                     }
                     ?>
                 </tbody>
@@ -186,48 +218,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email'])) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.getElementById('statusForm').addEventListener('submit', function(e) {
+        document.getElementById('statusForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const loadingSpinner = document.getElementById('loadingSpinner');
-            const resultPanel = document.getElementById('resultPanel');
-            const historyTableBody = document.querySelector('#historyTable tbody');
-            const form = this;
-
-            loadingSpinner.style.display = 'block';
-            resultPanel.style.display = 'none';
-
-            const formData = new FormData(form);
-            fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok: ' + response.status);
-                }
-                return response.json();
-            })
-            .then(data => {
-                loadingSpinner.style.display = 'none';
-                if (data.status === 'error') {
-                    resultPanel.innerHTML = '<h5 style="color: #FF4500;">Error</h5><p>' + data.message + '</p>';
-                } else {
-                    resultPanel.innerHTML = data.status_message;
-                    historyTableBody.innerHTML = data.history_html;
-                }
-                resultPanel.style.display = 'block';
-            })
-            .catch(error => {
-                loadingSpinner.style.display = 'none';
-                resultPanel.style.display = 'block';
-                resultPanel.innerHTML = '<h5 style="color: #FF4500;">Error</h5><p>Gagal memproses permintaan: ' + error.message + '</p>';
-            });
-        });
-    </script>
-</body>
-</html>
-
-<?php $conn->close(); ?>
