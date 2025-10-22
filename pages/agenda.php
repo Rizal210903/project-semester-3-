@@ -31,7 +31,7 @@ $agenda = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background: #E0F7FA;
+            background: #FFFFFF;
         }
         .agenda-card {
             border: none;
@@ -78,8 +78,8 @@ $agenda = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <main class="container-fluid p-0">
         <section class="hero-section text-center py-5">
             <div class="container py-5">
-                <h1 class="display-4 animate__animated animate__fadeIn" style="color: #007bff;">Agenda Kegiatan TK Pertiwi</h1>
-                <p class="lead animate__animated animate__fadeIn" style="color: #007bff; animation-delay: 0.2s;">Informasi kegiatan, acara tahunan, dan jadwal pembagian rapot</p>
+                <h1 class="display-4 animate__animated animate__fadeIn" style="color: #000080;">Agenda Kegiatan TK Pertiwi</h1>
+                <p class="lead animate__animated animate__fadeIn" style="color: #000000ff; animation-delay: 0.2s;">Informasi kegiatan, acara tahunan, dan jadwal pembagian rapot</p>
             </div>
         </section>
 
@@ -108,7 +108,7 @@ $agenda = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </main>
 
     <footer class="text-center py-3">
-        <p class="animate__animated animate__fadeIn" style="animation-delay: 0.2s;">&copy; 2025 TK Pertiwi</p>
+        <p class="animate__animated animate__fadeIn" style="animation-delay: 0.2s;">&copy; 2025 TK Pertiwi Semua hak cipta dilindungi</p>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

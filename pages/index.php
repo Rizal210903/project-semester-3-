@@ -19,19 +19,19 @@ include '../includes/header.php';
         <section class="hero-section">
             <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel" style="height: 100vh;">
                 <div class="carousel-inner">
-                    <div class="carousel-item active" style="background: #E0F7FA; height: 100%; background-image: url('../img/foto.png'); background-size: cover; background-position: center;">
+                    <div class="carousel-item active" style="background: #FFFFFF; height: 100%; background-image: url('<?php echo file_exists('../img/foto.png') ? '../img/foto.png' : 'https://via.placeholder.com/1200x800'; ?>'); background-size: cover; background-position: center;">
                         <div class="carousel-caption d-none d-md-block" style="top: 50%; transform: translateY(-50%);">
                             <h1 class="display-3 fw-bold text-white fade-text" style="font-family: 'Poppins', sans-serif;">Membangun Masa Depan Anak</h1>
                             <p class="lead text-white fade-text" style="font-family: 'Poppins', sans-serif;">Pendidikan Berkualitas untuk Generasi Muda</p>
                         </div>
                     </div>
-                    <div class="carousel-item" style="background: #E0F7FA; height: 100%; background-image: url('../img/foto3.png'); background-size: cover; background-position: center;">
+                    <div class="carousel-item" style="background: #FFFFFF; height: 100%; background-image: url('<?php echo file_exists('../img/foto3.png') ? '../img/foto3.png' : 'https://via.placeholder.com/1200x800'; ?>'); background-size: cover; background-position: center;">
                         <div class="carousel-caption d-none d-md-block" style="top: 50%; transform: translateY(-50%);">
                             <h1 class="display-3 fw-bold text-white fade-text" style="font-family: 'Poppins', sans-serif;">Ceria Belajar Bersama</h1>
                             <p class="lead text-white fade-text" style="font-family: 'Poppins', sans-serif;">Lingkungan Ramah untuk Anak-Anak</p>
                         </div>
                     </div>
-                    <div class="carousel-item" style="background: #E0F7FA; height: 100%; background-image: url('../img/fototi.png'); background-size: cover; background-position: center;">
+                    <div class="carousel-item" style="background: #FFFFFF; height: 100%; background-image: url('<?php echo file_exists('../img/fototi.png') ? '../img/fototi.png' : 'https://via.placeholder.com/1200x800'; ?>'); background-size: cover; background-position: center;">
                         <div class="carousel-caption d-none d-md-block" style="top: 50%; transform: translateY(-50%);">
                             <h1 class="display-3 fw-bold text-white fade-text" style="font-family: 'Poppins', sans-serif;">Inspirasi dari Awal</h1>
                             <p class="lead text-white fade-text" style="font-family: 'Poppins', sans-serif;">Fondasi Pendidikan Terbaik untuk Anak</p>
@@ -64,7 +64,7 @@ include '../includes/header.php';
         <!-- Gallery Foto Ekstra Kurikuler -->
         <section class="gallery-section py-5">
             <div class="container">
-                <h2 class="text-center mb-5 text-info animate__animated animate__bounce">Galeri Kegiatan</h2>
+                <h2 class="text-center mb-5" style="color: #000080; font-family: 'Poppins', sans-serif; animation: bounce 1s;">Galeri Kegiatan</h2>
                 <div class="text-center mb-4">
                     <button class="btn btn-outline-info mx-2 animate__animated animate__fadeIn" onclick="showCategory('all')">Semua</button>
                     <button class="btn btn-outline-info mx-2 animate__animated animate__fadeIn" onclick="showCategory('kegiatan')" style="animation-delay: 0.2s;">Foto Kegiatan Siswa</button>
@@ -73,12 +73,12 @@ include '../includes/header.php';
                 </div>
                 <div id="gallery-content" class="row g-4 justify-content-center">
                     <!-- Default: Semua -->
-                    <div class="col-md-3 gallery-item all kegiatan"><img src="../Uploads/ekstra1_edited.jpg" alt="Ekstra 1" class="img-fluid rounded shadow-sm animate__animated animate__zoomIn" style="animation-delay: 0.2s;"></div>
-                    <div class="col-md-3 gallery-item all prestasi"><img src="../img/placeholder2.jpg" alt="Ekstra 2" class="img-fluid rounded shadow-sm animate__animated animate__zoomIn" style="animation-delay: 0.4s;"></div>
-                    <div class="col-md-3 gallery-item all kegiatan"><img src="../img/placeholder3.jpg" alt="Ekstra 3" class="img-fluid rounded shadow-sm animate__animated animate__zoomIn" style="animation-delay: 0.6s;"></div>
-                    <div class="col-md-3 gallery-item all prestasi"><img src="../img/placeholder4.jpg" alt="Ekstra 4" class="img-fluid rounded shadow-sm animate__animated animate__zoomIn" style="animation-delay: 0.8s;"></div>
-                    <div class="col-md-3 gallery-item all ekstrakurikuler"><img src="../img/placeholder5.jpg" alt="Ekstra 5" class="img-fluid rounded shadow-sm animate__animated animate__zoomIn" style="animation-delay: 1.0s;"></div>
-                    <div class="col-md-3 gallery-item all ekstrakurikuler"><img src="../img/placeholder6.jpg" alt="Ekstra 6" class="img-fluid rounded shadow-sm animate__animated animate__zoomIn" style="animation-delay: 1.2s;"></div>
+                    <div class="col-md-3 gallery-item all kegiatan"><img src="<?php echo file_exists('../Uploads/ekstra1_edited.jpg') ? '../Uploads/ekstra1_edited.jpg' : 'https://via.placeholder.com/300x200'; ?>" alt="Ekstra 1" class="img-fluid rounded shadow-sm animate__animated animate__zoomIn" style="animation-delay: 0.2s;"></div>
+                    <div class="col-md-3 gallery-item all prestasi"><img src="<?php echo file_exists('../img/placeholder2.jpg') ? '../img/placeholder2.jpg' : 'https://via.placeholder.com/300x200'; ?>" alt="Ekstra 2" class="img-fluid rounded shadow-sm animate__animated animate__zoomIn" style="animation-delay: 0.4s;"></div>
+                    <div class="col-md-3 gallery-item all kegiatan"><img src="<?php echo file_exists('../img/placeholder3.jpg') ? '../img/placeholder3.jpg' : 'https://via.placeholder.com/300x200'; ?>" alt="Ekstra 3" class="img-fluid rounded shadow-sm animate__animated animate__zoomIn" style="animation-delay: 0.6s;"></div>
+                    <div class="col-md-3 gallery-item all prestasi"><img src="<?php echo file_exists('../img/placeholder4.jpg') ? '../img/placeholder4.jpg' : 'https://via.placeholder.com/300x200'; ?>" alt="Ekstra 4" class="img-fluid rounded shadow-sm animate__animated animate__zoomIn" style="animation-delay: 0.8s;"></div>
+                    <div class="col-md-3 gallery-item all ekstrakurikuler"><img src="<?php echo file_exists('../img/placeholder5.jpg') ? '../img/placeholder5.jpg' : 'https://via.placeholder.com/300x200'; ?>" alt="Ekstra 5" class="img-fluid rounded shadow-sm animate__animated animate__zoomIn" style="animation-delay: 1.0s;"></div>
+                    <div class="col-md-3 gallery-item all ekstrakurikuler"><img src="<?php echo file_exists('../img/placeholder6.jpg') ? '../img/placeholder6.jpg' : 'https://via.placeholder.com/300x200'; ?>" alt="Ekstra 6" class="img-fluid rounded shadow-sm animate__animated animate__zoomIn" style="animation-delay: 1.2s;"></div>
                 </div>
             </div>
         </section>
@@ -86,7 +86,7 @@ include '../includes/header.php';
         <!-- Peta Lokasi -->
         <section class="map-section py-5">
             <div class="container">
-                <h2 class="text-center mb-5 text-info animate__animated animate__bounce">Lokasi Kami</h2>
+                <h2 class="text-center mb-5" style="color: #000080; font-family: 'Poppins', sans-serif; animation: bounce 1s;">Lokasi Kami</h2>
                 <div class="ratio ratio-16x9">
                     <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3949.2639494126097!2d113.69934897432888!3d-8.17614258195306!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd69425c12acb8b%3A0x86fdf63c580222fc!2sTK%20Pertiwi!5e0!3m2!1sid!2sid!4v1759136704596!5m2!1sid!2sid" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                 </div>
@@ -103,7 +103,7 @@ include '../includes/header.php';
             position: relative;
             min-height: 100vh;
             overflow: hidden;
-            background: #E0F7FA;
+            background: #FFFFFF;
         }
 
         .carousel-inner {
@@ -131,7 +131,7 @@ include '../includes/header.php';
         }
 
         .sambutan-section {
-            background: #E0F7FA;
+            background: #FFFFFF;
         }
 
         .sambutan-box {
@@ -151,7 +151,7 @@ include '../includes/header.php';
         }
 
         .gallery-section {
-            background: #E0F7FA;
+            background: #FFFFFF;
         }
 
         .gallery-item {
@@ -179,7 +179,7 @@ include '../includes/header.php';
         }
 
         .map-section {
-            background: #E0F7FA;
+            background: #FFFFFF;
         }
 
         .star-decoration {
@@ -195,16 +195,28 @@ include '../includes/header.php';
             }
         }
 
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
         /* Animasi Fade Out dengan Scale Down */
         .fade-text {
             opacity: 1;
             transform: scale(1);
-            transition: opacity 1.5s ease-out, transform 1.5s ease-out; /* Transisi smooth untuk opacity dan scale */
+            transition: opacity 1.5s ease-out, transform 1.5s ease-out;
         }
 
         .fade-text.fade-out {
             opacity: 0;
-            transform: scale(0.8); /* Menyusut ke 80% ukuran asli */
+            transform: scale(0.8);
         }
     </style>
 
@@ -213,33 +225,30 @@ include '../includes/header.php';
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         const carousel = new bootstrap.Carousel(document.getElementById('heroCarousel'), {
-            interval: 5000, // 5 detik per slide
+            interval: 5000,
             ride: 'carousel'
         });
 
-        // Fungsi untuk fade out teks dengan scale down
         function fadeOutText() {
             const fadeTexts = document.querySelectorAll('.fade-text');
             fadeTexts.forEach(text => {
                 setTimeout(() => {
                     text.classList.add('fade-out');
-                }, 3000); // Mulai fade out setelah 3 detik
+                }, 3000);
             });
         }
 
-        // Jalankan fade out saat slide aktif
         carousel._element.addEventListener('slid.bs.carousel', function (event) {
             const activeSlide = document.querySelector('.carousel-item.active .carousel-caption');
             if (activeSlide) {
                 const fadeTexts = activeSlide.querySelectorAll('.fade-text');
                 fadeTexts.forEach(text => {
-                    text.classList.remove('fade-out'); // Reset opacity dan scale ke normal
-                    fadeOutText(); // Mulai fade out lagi
+                    text.classList.remove('fade-out');
+                    fadeOutText();
                 });
             }
         });
 
-        // Jalankan fade out pertama kali saat halaman dimuat
         fadeOutText();
     });
 

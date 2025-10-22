@@ -13,7 +13,7 @@
         });
     }
     </script>
-    <footer class="bg-light text-center p-3 mt-5" style="background: #E0F6FF; color: #333;">
+    <footer class="bg-light text-center p-3 mt-5" style="background: #022230ff; color: #333;">
         <p class="mb-0">&copy; 2025 TK Pertiwi. Semua hak cipta dilindungi.</p>
     </footer>
 </body>

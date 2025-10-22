@@ -81,7 +81,7 @@
                         <a class="nav-link animate__animated animate__fadeIn" href="/project-semester-3-/pages/index.php">Beranda</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link animate__animated animate__fadeIn" href="/project-semester-3-/pages/profil.php" style="animation-delay: 0.1s;">Profil Sekolah</a>
+                        <a class="nav-link animate__animated animate__fadeIn" href="/project-semester-3-/pages/profil.php" style="animation-delay:  0.1s;">Profil Sekolah</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link animate__animated animate__fadeIn" href="/project-semester-3-/pages/agenda.php" style="animation-delay: 0.2s;">Agenda Kegiatan</a>
@@ -98,7 +98,7 @@
         </div>
     </nav>
 <main class="container-fluid p-0">
-    <section class="kontak-section py-5" style="background: #FFF3E0;">
+    <section class="kontak-section py-5" style="background: #E0F6FF;">
         <div class="container">
             <h1 class="text-center mb-5 text-primary animate__animated animate__fadeIn" style="font-family: 'Poppins', sans-serif;">Kontak Kami</h1>
             <div class="row">
