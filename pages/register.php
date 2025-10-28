@@ -1,19 +1,19 @@
 <?php
 ob_start(); // Mulai output buffering
 include '../includes/header.php';
-    
 
 $servername = "localhost";
 $username = "root";
 $password = "";
 $dbname = "tk_pertiwi_db";
 
-try {
-    $pdo = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch(PDOException $e) {
-    error_log("Koneksi gagal: " . $e->getMessage());
-    die("Koneksi gagal: " . $e->getMessage());
+// Koneksi menggunakan mysqli
+$conn = mysqli_connect($servername, $username, $password, $dbname);
+
+// Cek koneksi
+if (!$conn) {
+    error_log("Koneksi gagal: " . mysqli_connect_error());
+    die("Koneksi gagal: " . mysqli_connect_error());
 }
 
 $error = '';
@@ -33,22 +33,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "Email tidak valid!";
     } else {
         // Cek apakah email sudah ada
-        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE email = ?");
-        $checkStmt->execute([$email]);
-        if ($checkStmt->fetchColumn() > 0) {
+        $stmt = mysqli_prepare($conn, "SELECT COUNT(*) FROM users WHERE email = ?");
+        mysqli_stmt_bind_param($stmt, "s", $email);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $count);
+        mysqli_stmt_fetch($stmt);
+        mysqli_stmt_close($stmt);
+
+        if ($count > 0) {
             $error = "Email '$email' sudah digunakan! Silakan gunakan email lain.";
         } else {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("INSERT INTO users (username, nama_ortu, email, password) VALUES (?, ?, ?, ?)");
-            if ($stmt->execute([$username, $nama_ortu, $email, $hashed_password])) {
+            $role = 'user'; // Nilai default untuk role
+            $stmt = mysqli_prepare($conn, "INSERT INTO users (username, nama_ortu, email, password, role) VALUES (?, ?, ?, ?, ?)");
+            mysqli_stmt_bind_param($stmt, "sssss", $username, $nama_ortu, $email, $hashed_password, $role);
+            
+            if (mysqli_stmt_execute($stmt)) {
                 ob_end_clean(); // Hapus output sebelum redirect
                 header("Location: /project-semester-3-/pages/login.php");
                 exit;
             } else {
                 $error = "Registrasi gagal! Hubungi admin.";
-                $errorInfo = $stmt->errorInfo();
-                error_log("SQL Error: " . print_r($errorInfo, true));
+                error_log("SQL Error: " . mysqli_error($conn));
             }
+            mysqli_stmt_close($stmt);
         }
     }
 }
@@ -104,7 +112,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </section>
     </main>
 
-    <?php include '../includes/footer.php'; ?>
-    <?php ob_end_flush();  ?>
+    <?php 
+    include '../includes/footer.php'; 
+    mysqli_close($conn); // Tutup koneksi
+    ob_end_flush(); 
+    ?>
 </body>
 </html>

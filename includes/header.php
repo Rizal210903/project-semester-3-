@@ -18,7 +18,7 @@
             background: #E0F6FF; /* Biru muda lembut */
         }
         .navbar {
-            background: #ffffffff;
+            background: #ffffff;
             padding: 10px 20px;
             position: sticky;
             top: 0;
@@ -28,14 +28,34 @@
             max-height: 40px;
         }
         .navbar-brand, .nav-link {
-            font-family: 'Poppins', sans-serif; /* Font navbar Poppins */
-            font-weight: 500; /* Sedang */
-            color: #333 !important; /* Teks hitam lembut */
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            color: #333 !important;
             margin: 0 10px;
         }
         .nav-link:hover {
-            color: #4682B4 !important; /* Biru steel saat hover */
-            font-weight: 600; /* Lebih tebal saat hover */
+            color: #4682B4 !important;
+            font-weight: 600;
+        }
+        .btn-login {
+            border: 2px solid #4682B4;
+            color: #4682B4;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-login:hover {
+            background-color: #4682B4;
+            color: white;
+        }
+        .btn-signup {
+            background-color: #4682B4;
+            color: white;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-signup:hover {
+            background-color: #315f86;
+            color: white;
         }
         .hero-section {
             position: relative;
@@ -67,6 +87,8 @@
     </style>
 </head>
 <body>
+
+    <!-- NAVBAR -->
     <nav class="navbar navbar-expand-lg navbar-light shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold text-4682B4" href="/project-semester-3-/pages/index.php">
@@ -75,8 +97,9 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
+
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-lg-center">
                     <li class="nav-item">
                         <a class="nav-link animate__animated animate__fadeIn" href="/project-semester-3-/pages/index.php">Beranda</a>
                     </li>
@@ -92,8 +115,19 @@
                     <li class="nav-item">
                         <a class="nav-link animate__animated animate__fadeIn" href="/project-semester-3-/pages/kontak.php" style="animation-delay: 0.4s;">Kontak</a>
                     </li>
-                    
+
+                    <!-- Tombol Login & Signup -->
+                    <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
+                        <a href="/project-semester-3-/pages/login.php" class="btn btn-login btn-sm animate__animated animate__fadeIn" style="animation-delay: 0.5s;">Login</a>
+                    </li>
+                    <li class="nav-item ms-2 mt-2 mt-lg-0">
+                        <a href="/project-semester-3-/pages/register.php" class="btn btn-signup btn-sm animate__animated animate__fadeIn" style="animation-delay: 0.6s;">Sign Up</a>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

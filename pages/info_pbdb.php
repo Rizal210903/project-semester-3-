@@ -35,15 +35,19 @@ $syarat = $stmt->fetchAll(PDO::FETCH_COLUMN);
     <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
     <style>
         body { font-family: 'Poppins', sans-serif; background: #FFFFFF; }
-        .hero-section {
-            background: url('/project-semester-3-/img/ppdb-bg.jpg') no-repeat center/cover;
-            position: relative;
-            min-height: 300px;
-        }
-        .hero-section div {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #FFFFFF;
-        }
+.hero-section {
+    background: url('/project-semester-3-/img/') no-repeat center/cover;
+    position: relative;
+    min-height: 300px;
+}
+.hero-section div {
+    position: absolute; 
+    top: 0; left: 0; 
+    width: 100%; 
+    height: 100%;
+    background: rgba(255, 255, 255, 0.7);
+    z-index: 1;
+}
         .info-section { background: #FFFFFF; padding: 40px 0; }
         .card-info { background: #fff; border: 2px solid #45B7D1; border-radius: 10px; padding: 20px; }
         .dropdown-menu {
@@ -53,7 +57,6 @@ $syarat = $stmt->fetchAll(PDO::FETCH_COLUMN);
         .dropdown-item { cursor: pointer; }
         .dropdown-item:hover { background: #45B7D1; color: #fff; }
         .dropdown-item.disabled { color: #888; cursor: not-allowed; pointer-events: none; }
-        .modal-content { border-radius: 10px; }
 
         @media (max-width: 768px) {
             .hero-section { min-height: 200px; }
@@ -67,7 +70,6 @@ $syarat = $stmt->fetchAll(PDO::FETCH_COLUMN);
     <main class="container-fluid p-0">
         <!-- Hero Section -->
         <section class="hero-section text-center py-5">
-        
             <div class="container py-5 position-relative">
                 <h1 class="display-4 text-animate__animated animate__fadeIn" style="color: #000080ff; font-family: 'Poppins', sans-serif;">Info PPDB TK Pertiwi</h1>
                 <p class="lead text-black animate__animated animate__fadeIn" style="color: #000000ff; font-family: 'Poppins', sans-serif;">Informasi Penerimaan Peserta Didik Baru Tahun 2025/2026</p>
@@ -122,7 +124,7 @@ $syarat = $stmt->fetchAll(PDO::FETCH_COLUMN);
                             Pilih Aksi PPDB <i class="bi bi-chevron-down"></i>
                         </button>
                         <ul class="dropdown-menu" id="ppdbMenu" aria-labelledby="ppdbDropdown">
-                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#loginAlertModal">Daftar Sekarang</a></li>
+                            <li><a class="dropdown-item" href="/project-semester-3-/pages/pendaftaran.php">Daftar Sekarang</a></li>
                             <li><a class="dropdown-item" href="/project-semester-3-/pages/status.php">Cek Status Pendaftaran</a></li>
                             <li><a class="dropdown-item disabled" href="#">Panduan PPDB (Segera Hadir)</a></li>
                         </ul>
@@ -136,29 +138,40 @@ $syarat = $stmt->fetchAll(PDO::FETCH_COLUMN);
         <p>&copy; 2025 TK Pertiwi Semua hak cipta dilindungi</p>
     </footer>
 
-    <!-- Modal Peringatan Login -->
-    <div class="modal fade" id="loginAlertModal" tabindex="-1" aria-labelledby="loginAlertModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="loginAlertModalLabel">Peringatan</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Silakan login terlebih dahulu untuk melanjutkan pendaftaran.</p>
-                    <a href="/project-semester-3-/pages/login.php" class="btn btn-primary">Login/Register</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.js"></script>
     <script>
+
+        document.addEventListener('DOMContentLoaded', function() {
+    console.log('Bootstrap dropdown check...');
+    const dropdownTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
+    dropdownTriggerList.map(function (dropdownTriggerEl) {
+        return new bootstrap.Dropdown(dropdownTriggerEl);
+    });
+});
         document.addEventListener('DOMContentLoaded', () => {
             console.log('Page loaded, checking functionality');
             console.log(typeof bootstrap === 'object' ? 'Bootstrap JS loaded' : 'Bootstrap JS not loaded');
         });
+        document.addEventListener('DOMContentLoaded', () => {
+    console.log('✅ Bootstrap JS check:', typeof bootstrap);
+
+    const dropdownTrigger = document.getElementById('ppdbDropdown');
+    const dropdownMenu = document.getElementById('ppdbMenu');
+
+    // Tambahkan instance dropdown manual
+    if (dropdownTrigger) {
+        const dropdown = new bootstrap.Dropdown(dropdownTrigger);
+
+        dropdownTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('✅ Tombol dropdown diklik!');
+            dropdown.toggle(); // Toggle dropdown secara manual
+        });
+    } else {
+        console.error('❌ Tombol dropdown tidak ditemukan');
+    }
+});
     </script>
 </body>
 </html>
