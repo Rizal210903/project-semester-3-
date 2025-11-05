@@ -60,7 +60,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         body {
             font-family: 'Poppins', sans-serif;
             background: #E0F7FA;
+            
         }
+         /* Tombol Login & Sign Up */
+        .btn-login {
+            border: 2px solid #4682B4;
+            color: #4682B4;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 6px 16px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        .btn-login:hover {
+            background-color: #4682B4;
+            color: white;
+        }
+
+        .btn-signup {
+            background-color: #4682B4;
+            color: white;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 6px 16px;
+            border: 2px solid #4682B4;
+            transition: all 0.3s ease;
+        }
+        .btn-signup:hover {
+            background-color: #315f86;
+            border-color: #315f86;
+        }   
+        
         .login-section {
             background: #fff;
             border: 2px solid #45B7D1;

@@ -2,7 +2,7 @@
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "tk_pertiwi";
+$dbname = "tk_pertiwi_db";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 

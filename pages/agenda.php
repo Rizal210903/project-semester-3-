@@ -33,6 +33,35 @@ $agenda = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-family: 'Poppins', sans-serif;
             background: #FFFFFF;
         }
+       
+        /* Tombol Login & Sign Up */
+        .btn-login {
+            border: 2px solid #4682B4;
+            color: #4682B4;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 6px 16px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        .btn-login:hover {
+            background-color: #4682B4;
+            color: white;
+        }
+
+        .btn-signup {
+            background-color: #4682B4;
+            color: white;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 6px 16px;
+            border: 2px solid #4682B4;
+            transition: all 0.3s ease;
+        }
+        .btn-signup:hover {
+            background-color: #315f86;
+            border-color: #315f86;
+        }
         .agenda-card {
             border: none;
             border-radius: 15px;
