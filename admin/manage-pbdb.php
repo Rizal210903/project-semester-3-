@@ -146,7 +146,7 @@ body {
 
             <!-- Aksi -->
             <td>
-              <form method="POST" class="d-inline">
+              <form method="POST" action="status.php"class="d-inline">
                 <input type="hidden" name="id" value="<?= $row['id']; ?>">
                 <select name="status" class="form-select form-select-sm mb-2">
                   <option value="pending" <?= $row['status_ppdb']=='pending'?'selected':''; ?>>Pending</option>
