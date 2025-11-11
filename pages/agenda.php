@@ -35,7 +35,67 @@ $agenda = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: #f4f9ff;
             overflow-x: hidden;
         }
+         /* Tombol Login & Sign Up */
+        .btn-login {
+            border: 2px solid #4682B4;
+            color: #4682B4;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 6px 16px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        .btn-login:hover {
+            background-color: #4682B4;
+            color: white;
+        }
 
+        .btn-signup {
+            background-color: #4682B4;
+            color: white;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 6px 16px;
+            border: 2px solid #4682B4;
+            transition: all 0.3s ease;
+        }
+        .btn-signup:hover {
+            background-color: #315f86;
+            border-color: #315f86;
+        }   
+        
+        .login-section {
+            background: #fff;
+            border: 2px solid #45B7D1;
+            border-radius: 10px;
+            padding: 30px;
+            margin-top: 40px;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .login-section h1 {
+            color: #0077b6;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 700;
+        }
+        .form-label {
+            font-weight: 500;
+        }
+        .btn-primary {
+            background-color: #0077b6;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #005f87;
+        }
+        .error {
+            color: red;
+            font-size: 0.9rem;
+            text-align: center;
+        }
         /* ====== GLOBAL SECTION STYLE (SAMA SEPERTI profil.php) ====== */
         .section-block {
             padding: 80px 0;
