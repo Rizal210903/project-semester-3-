@@ -120,6 +120,18 @@ $is_dashboard_active = in_array($current_page, $dashboard_pages);
     .sidebar::-webkit-scrollbar-thumb:hover {
         background-color: #999;
     }
+    /* Responsif: Sidebar sembunyi di layar kecil */
+@media (max-width: 768px) {
+    .sidebar {
+        left: -250px; /* sembunyikan di mobile */
+    }
+
+    .sidebar.active {
+        left: 0; /* tampilkan ketika diaktifkan */
+    }
+}
+
+
 </style>
 
 <nav class="sidebar">
@@ -147,6 +159,11 @@ $is_dashboard_active = in_array($current_page, $dashboard_pages);
                 <li>
                     <a href="galeri.php" class="<?= $current_page == 'galeri.php' ? 'active' : '' ?>">
                         <i class="bi bi-image"></i><span>Galeri Foto</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="manage_pbdb_info.php" class="<?= $current_page == 'manage_pbdb_info.php' ? 'active' : '' ?>">
+                      <i class="bi bi-info-circle"></i> Kelola Info PPDB
                     </a>
                 </li>
                 <li>

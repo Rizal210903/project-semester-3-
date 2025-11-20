@@ -10,245 +10,154 @@ try {
     $pdo = new PDO("mysql:host=$servername;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch(PDOException $e) {
-    error_log("Koneksi gagal: " . $e->getMessage());
     die("Koneksi gagal: " . $e->getMessage());
 }
 
-// Ambil jadwal PPDB
-$stmt = $pdo->query("SELECT content FROM ppdb_info WHERE type = 'jadwal' ORDER BY display_order");
-$jadwal = $stmt->fetchAll(PDO::FETCH_COLUMN);
+/* ==========================================================
+   AMBIL DATA PPDB DARI DATABASE (JSON)
+   ========================================================== */
 
-// Ambil syarat PPDB
-$stmt = $pdo->query("SELECT content FROM ppdb_info WHERE type = 'syarat' ORDER BY display_order");
-$syarat = $stmt->fetchAll(PDO::FETCH_COLUMN);
+$stmt = $pdo->prepare("SELECT content FROM ppdb_info WHERE id = 1 LIMIT 1");
+$stmt->execute();
+
+$data = $stmt->fetchColumn();
+$data = $data ? json_decode($data, true) : ["jadwal" => [], "syarat" => ""];
+
+// Ambil JSON
+$jadwal = $data["jadwal"] ?? [];
+$syarat = $data["syarat"] ?? "";
 ?>
-
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Info PPDB - TK Pertiwi</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
-
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: #f4f9ff;
-            overflow-x: hidden;
-        }
-
-        /* ===== TOMBOL LOGIN & SIGNUP ===== */
-        .btn-login {
-            border: 2px solid #4682B4;
-            color: #4682B4;
-            font-weight: 500;
-            border-radius: 6px;
-            padding: 6px 16px;
-            background: white;
-            transition: all 0.3s ease;
-        }
-        .btn-login:hover {
-            background-color: #4682B4;
-            color: white;
-        }
-        .btn-signup {
-            background-color: #4682B4;
-            color: white;
-            font-weight: 500;
-            border-radius: 6px;
-            padding: 6px 16px;
-            border: 2px solid #4682B4;
-            transition: all 0.3s ease;
-        }
-        .btn-signup:hover {
-            background-color: #315f86;
-            border-color: #315f86;
-        }
-
-        /* ===== HERO SECTION ===== */
-        .hero-section {
-            background: linear-gradient(180deg, #f9fcff 0%, #e7f1ff 100%);
-            text-align: center;
-            padding: 100px 0;
-        }
-        .hero-section h1 {
-            color: #000080;
-            font-weight: 700;
-        }
-        .hero-section p {
-            color: #000;
-            font-size: 1.1rem;
-        }
-
-        /* ===== CARD INFO ===== */
-        .section-block {
-            padding: 80px 0;
-            background: linear-gradient(180deg, #f9fcff 0%, #e7f1ff 100%);
-        }
-        .section-title {
-            color: #000080;
-            font-weight: 600;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-        .card-info {
-            background: #ffffff;
-            border-radius: 15px;
-            border: none;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            padding: 25px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .card-info:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        }
-
-        .list-group-item {
-            border: none;
-            border-bottom: 1px solid #e7f1ff;
-            background: transparent;
-            font-size: 1rem;
-        }
-
-        /* ===== DROPDOWN ===== */
-        .btn-primary {
-            background-color: #45B7D1;
-            border: none;
-            padding: 10px 25px;
-            font-weight: 500;
-            border-radius: 8px;
-            transition: background 0.3s ease;
-        }
-        .btn-primary:hover {
-            background-color: #319ab7;
-        }
-
-        .dropdown-menu {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-            padding: 10px;
-        }
-        .dropdown-item {
-            border-radius: 6px;
-            padding: 8px 15px;
-            transition: background 0.3s ease;
-        }
-        .dropdown-item:hover {
-            background-color: #45B7D1;
-            color: #fff;
-        }
-
-        .divider {
-            height: 100px;
-            position: relative;
-            overflow: hidden;
-        }
-        .divider-wave {
-            background: url('https://www.svgrepo.com/show/492220/wave-top.svg') no-repeat center;
-            background-size: cover;
-        }
-        .divider-wave2 {
-            background: url('https://www.svgrepo.com/show/491975/wave.svg') no-repeat center;
-            background-size: cover;
-        }
-
-        footer {
-            background: #e7f1ff;
-            color: #000;
-            padding: 20px;
-            text-align: center;
-        }
-    </style>
-</head>
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: #f4f9ff;
+        overflow-x: hidden;
+    }
+    .hero-section {
+        background: linear-gradient(180deg, #f9fcff 0%, #e7f1ff 100%);
+        text-align: center;
+        padding: 100px 0;
+    }
+    .hero-section h1 {
+        color: #000080;
+        font-weight: 700;
+    }
+    .section-block {
+        padding: 80px 0;
+        background: linear-gradient(180deg, #f9fcff 0%, #e7f1ff 100%);
+    }
+    .section-title {
+        color: #000080;
+        font-weight: 600;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    .card-info {
+        background: #ffffff;
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        padding: 25px;
+    }
+    .list-group-item {
+        border: none;
+        border-bottom: 1px solid #e7f1ff;
+        background: transparent;
+        font-size: 1rem;
+    }
+</style>
 
 <body>
-    <main class="container-fluid p-0">
 
-        <!-- ===== HERO ===== -->
-        <section class="hero-section animate__animated animate__fadeInDown">
-            <div class="container">
-                <h1 class="display-5">Info PPDB TK Pertiwi</h1>
-                <p>Informasi Penerimaan Peserta Didik Baru Tahun 2025/2026</p>
-            </div>
-            <div class="divider divider-wave"></div>
-        </section>
+<main class="container-fluid p-0">
 
-        <!-- ===== JADWAL & SYARAT ===== -->
-        <section class="section-block">
-            <div class="container">
-                <div class="row">
-                    <!-- JADWAL -->
-                    <div class="col-lg-6 mb-4">
-                        <div class="card-info h-100">
-                            <h2 class="section-title">Jadwal PPDB</h2>
-                            <ul class="list-group list-group-flush">
-                                <?php if (empty($jadwal)): ?>
-                                    <li class="list-group-item">Data jadwal belum tersedia.</li>
-                                <?php else: ?>
-                                    <?php foreach ($jadwal as $item): ?>
-                                        <li class="list-group-item"><?= htmlspecialchars($item); ?></li>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </ul>
-                        </div>
-                    </div>
+    <section class="hero-section">
+        <div class="container">
+            <h1 class="display-5">Info PPDB TK Pertiwi</h1>
+            <p>Informasi Penerimaan Peserta Didik Baru Tahun 2025/2026</p>
+        </div>
+        <div class="divider divider-wave"></div>
+    </section>
 
-                    <!-- SYARAT -->
-                    <div class="col-lg-6 mb-4">
-                        <div class="card-info h-100">
-                            <h2 class="section-title">Syarat Pendaftaran</h2>
-                            <ul class="list-group list-group-flush">
-                                <?php if (empty($syarat)): ?>
-                                    <li class="list-group-item">Data syarat belum tersedia.</li>
-                                <?php else: ?>
-                                    <?php foreach ($syarat as $item): ?>
-                                        <li class="list-group-item"><?= htmlspecialchars($item); ?></li>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+    <section class="section-block">
+        <div class="container">
+            <div class="row">
 
-                <!-- DROPDOWN AKSI -->
-                <div class="text-center mt-5">
-                    <div class="dropdown">
-                        <button class="btn btn-primary btn-lg dropdown-toggle" type="button" id="ppdbDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            Pilih Aksi PPDB <i class="bi bi-chevron-down"></i>
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="ppdbDropdown">
-                            <li><a class="dropdown-item" href="pendaftaran.php">Daftar Sekarang</a></li>
-                            <li><a class="dropdown-item" href="status.php">Cek Status Pendaftaran</a></li>
-                            <li><a class="dropdown-item disabled" href="#">Panduan PPDB (Segera Hadir)</a></li>
+                <!-- =============================== -->
+                <!--           JADWAL PPDB          -->
+                <!-- =============================== -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card-info h-100">
+                        <h2 class="section-title">Jadwal PPDB</h2>
+                        <ul class="list-group list-group-flush">
+
+                            <?php if (empty($jadwal)): ?>
+                                <li class="list-group-item">Jadwal PPDB belum diisi admin.</li>
+
+                            <?php else: ?>
+                                <?php foreach ($jadwal as $item): ?>
+                                    <li class="list-group-item">
+                                        <strong><?= htmlspecialchars(ucwords($item["nama"])) ?></strong>:
+                                        <?= date("j F Y", strtotime($item["mulai"])) ?>
+                                        -
+                                        <?= date("j F Y", strtotime($item["selesai"])) ?>
+                                    </li>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+
                         </ul>
                     </div>
                 </div>
+
+                <!-- =============================== -->
+                <!--     SYARAT PENDAFTARAN          -->
+                <!-- =============================== -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card-info h-100">
+                        <h2 class="section-title">Syarat Pendaftaran</h2>
+                        <ul class="list-group list-group-flush">
+
+                            <?php 
+                                if (empty(trim($syarat))) {
+                                    echo '<li class="list-group-item">Syarat PPDB belum diisi admin.</li>';
+                                } else {
+                                    $syarat_list = preg_split('/\r\n|\r|\n/', $syarat);
+                                    foreach ($syarat_list as $s):
+                            ?>
+                                <li class="list-group-item"><?= htmlspecialchars($s) ?></li>
+                            <?php 
+                                    endforeach;
+                                }
+                            ?>
+
+                        </ul>
+                    </div>
+                </div>
+
             </div>
-            <div class="divider divider-wave2"></div>
-        </section>
-    </main>
 
-    <footer>
-        <p>&copy; 2025 TK Pertiwi. Semua hak cipta dilindungi.</p>
-    </footer>
+            <!-- Dropdown Aksi -->
+            <div class="text-center mt-5">
+                <div class="dropdown">
+                    <button class="btn btn-primary btn-lg dropdown-toggle" data-bs-toggle="dropdown">
+                        Pilih Aksi PPDB
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="pendaftaran.php">Daftar Sekarang</a></li>
+                        <li><a class="dropdown-item" href="status.php">Cek Status Pendaftaran</a></li>
+                        <li><a class="dropdown-item disabled">Panduan PPDB (Segera Hadir)</a></li>
+                    </ul>
+                </div>
+            </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        </div>
+    </section>
 
-    <!-- INISIALISASI DROPDOWN -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var dropdownTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
-            dropdownTriggerList.map(function (dropdownTriggerEl) {
-                return new bootstrap.Dropdown(dropdownTriggerEl);
-            });
-        });
-    </script>
+</main>
+
+<footer style="background:#e7f1ff;padding:20px;text-align:center">
+    &copy; 2025 TK Pertiwi
+</footer>
+
 </body>
 </html>

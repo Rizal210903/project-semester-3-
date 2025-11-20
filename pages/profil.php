@@ -2,9 +2,8 @@
 include '../includes/header.php';
 include '../includes/config.php'; // koneksi ke database
 ?>
-
 <main class="container-fluid p-0">
-
+ 
     <!-- ======================= SAMBUTAN KEPALA SEKOLAH ======================= -->
     <?php
     $kepala = $conn->query("SELECT * FROM galeri_foto WHERE kategori='kepala_sekolah' ORDER BY created_at DESC LIMIT 1");
@@ -217,16 +216,9 @@ include '../includes/config.php'; // koneksi ke database
     </section>
 </main>
 
-<?php include '../includes/footer.php'; ?>
 
 <!-- ======================= STYLING ======================= -->
 <style>
-body {
-    font-family: 'Poppins', sans-serif;
-    background: #f4f9ff;
-    overflow-x: hidden;
-}
-
 /* --- Section Style --- */
 .section-block {
     padding: 80px 0;
@@ -311,6 +303,8 @@ body {
     .sambutan-section img { margin-bottom: 20px; }
 }
 </style>
+
+<?php include '../includes/footer.php'; ?>
 
 <!-- ======================= SCRIPT ======================= -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

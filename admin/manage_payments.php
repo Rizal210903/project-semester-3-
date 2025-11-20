@@ -1,12 +1,6 @@
 <?php
 include '../includes/config.php';
-include 'sidebar.php';
-
-// Update otomatis: jika bukti pembayaran ada, ubah status jadi 'dibayar'
-$conn->query("UPDATE pendaftaran 
-              SET status_pembayaran='dibayar' 
-              WHERE bukti_pembayaran IS NOT NULL 
-              AND status_pembayaran!='dibayar'");
+ include 'sidebar.php'; 
 ?>
 
 <!DOCTYPE html>
@@ -17,6 +11,8 @@ $conn->query("UPDATE pendaftaran
 <title>Kelola Pembayaran - TK Pertiwi</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
 body {
     background-color: #f1f7fd;
@@ -42,7 +38,6 @@ body {
     .main-content { margin-left: 0; padding: 90px 20px; }
 }
 
-/* Container */
 .card-container {
     background: #fff;
     border-radius: 12px;
@@ -50,61 +45,20 @@ body {
     padding: 25px;
 }
 
-/* Table */
-.table thead {
-    background-color: #e9f2ff;
-}
-.table th {
-    font-weight: 600;
-    color: #333;
-}
-.table td {
-    vertical-align: middle;
-}
-.table img {
-    border-radius: 8px;
-    cursor: pointer;
-    width: 80px;
-    height: 60px;
-    object-fit: cover;
-    transition: transform 0.2s;
-}
-.table img:hover {
-    transform: scale(1.1);
-}
+.table thead { background-color: #e9f2ff; }
+.table th { font-weight: 600; color: #333; }
+.table td { vertical-align: middle; text-align: center; }
+.table img { border-radius: 8px; cursor: pointer; width: 80px; height: 60px; object-fit: cover; transition: transform 0.2s; }
+.table img:hover { transform: scale(1.1); }
 
-/* Badges */
-.badge-status {
-    font-weight: 600;
-    border-radius: 10px;
-    padding: 6px 10px;
-    display: inline-block;
-}
-.status-belum_bayar {
-    background-color: #fff3cd;
-    color: #856404;
-}
-.status-menunggu_verifikasi {
-    background-color: #d1ecf1;
-    color: #0c5460;
-}
-.status-dibayar {
-    background-color: #d4edda;
-    color: #155724;
-}
+.badge-status { font-weight: 600; border-radius: 10px; padding: 6px 10px; display: inline-block; }
+.status-belum_bayar { background-color: #fff3cd; color: #856404; }
+.status-menunggu_verifikasi { background-color: #d1ecf1; color: #0c5460; }
+.status-dibayar { background-color: #d4edda; color: #155724; }
 
-/* Empty state */
-.empty-state {
-    text-align: center;
-    padding: 30px;
-    color: #6c757d;
-}
+.empty-state { text-align: center; padding: 30px; color: #6c757d; }
 
-/* Modal */
-.modal-img {
-    width: 100%;
-    border-radius: 10px;
-}
+.modal-img { width: 100%; border-radius: 10px; }
 </style>
 </head>
 <body>
@@ -121,7 +75,7 @@ body {
         </div>
 
         <div class="table-responsive">
-            <table class="table align-middle table-bordered text-center">
+            <table class="table align-middle table-bordered">
                 <thead>
                     <tr>
                         <th>No</th>
@@ -135,30 +89,33 @@ body {
                 </thead>
                 <tbody>
                     <?php
-                    $result = $conn->query("SELECT * FROM pendaftaran ORDER BY tanggal_pembayaran DESC");
+                    $result = $conn->query("SELECT * FROM payments ORDER BY tanggal_bayar DESC"); 
                     if ($result && $result->num_rows > 0):
                         $no = 1;
                         while ($row = $result->fetch_assoc()):
                             $statusClass = "status-" . $row['status_pembayaran'];
+                            $image_src = empty($row['bukti_path']) ? '' : '../uploads/bukti_pembayaran/' . htmlspecialchars($row['bukti_path']);
                     ?>
                     <tr>
                         <td><?= $no++; ?></td>
                         <td><?= htmlspecialchars($row['nama_anak']); ?></td>
                         <td><?= htmlspecialchars($row['nama_ortu']); ?></td>
                         <td><?= $row['metode_pembayaran'] ?: '-'; ?></td>
-                        <td><?= $row['tanggal_pembayaran'] ? date('d M Y', strtotime($row['tanggal_pembayaran'])) : '-'; ?></td>
+                        <td><?= $row['tanggal_bayar'] ? date('d M Y', strtotime($row['tanggal_bayar'])) : '-'; ?></td>
                         <td>
-                            <?php if ($row['bukti_pembayaran']): ?>
-                                <img src="../uploads/<?= $row['bukti_pembayaran']; ?>" 
-                                     alt="Bukti" 
-                                     onclick="showModal('../uploads/<?= $row['bukti_pembayaran']; ?>')">
+                            <?php if (!empty($row['bukti_path'])): ?>
+                                <img src="<?= $image_src; ?>" 
+                                    alt="Bukti" 
+                                    onclick="showModal('<?= $image_src; ?>')">
                             <?php else: ?>
                                 <span class="text-muted">Belum ada</span>
                             <?php endif; ?>
                         </td>
-                        <td><span class="badge-status <?= $statusClass; ?>">
-                            <?= ucfirst(str_replace('_',' ', $row['status_pembayaran'])); ?>
-                        </span></td>
+                        <td>
+                            <span class="badge-status <?= $statusClass; ?>">
+                                <?= ucfirst(str_replace('_',' ', $row['status_pembayaran'])); ?>
+                            </span>
+                        </td>
                     </tr>
                     <?php endwhile; else: ?>
                     <tr>
@@ -174,7 +131,6 @@ body {
     </div>
 </main>
 
-<!-- Modal Preview Gambar -->
 <div class="modal fade" id="imageModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
@@ -187,16 +143,14 @@ body {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Preview bukti pembayaran dalam modal
 function showModal(src) {
-    document.getElementById('modalImage').src = src;
+    document.getElementById('modalImage').src = src; 
     new bootstrap.Modal(document.getElementById('imageModal')).show();
 }
 
-// Auto-refresh tiap 30 detik
-setInterval(() => location.reload(), 30000);
+// Opsional auto-refresh tiap 30 detik
+// setInterval(() => location.reload(), 30000);
 </script>
 
 </body>
 </html>
-    

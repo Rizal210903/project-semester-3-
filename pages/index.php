@@ -2,17 +2,6 @@
 include '../includes/header.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TK Pertiwi</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
-</head>
 <body>
     <main class="container-fluid p-0">
         <!-- Hero Section Slider -->
@@ -25,7 +14,7 @@ include '../includes/header.php';
                             <p class="lead text-white fade-text" style="font-family: 'Poppins', sans-serif;">Pendidikan Berkualitas untuk Generasi Muda</p>
                         </div>
                     </div>
-                    <div class="carousel-item" style="background: #FFFFFF; height: 100%; background-image: url('<?php echo file_exists('../img/foto3.png') ? '../img/foto3.png' : 'https://via.placeholder.com/1200x800'; ?>'); background-size: cover; background-position: center;">
+                    <div class="carousel-item" style="background: #FFFFFF; height: 100%; background-image: url('<?php echo file_exists('../img/guru.png') ? '../img/guru.png' : 'https://via.placeholder.com/1200x800'; ?>'); background-size: cover; background-position: center;">
                         <div class="carousel-caption d-none d-md-block" style="top: 50%; transform: translateY(-50%);">
                             <h1 class="display-3 fw-bold text-white fade-text" style="font-family: 'Poppins', sans-serif;">Ceria Belajar Bersama</h1>
                             <p class="lead text-white fade-text" style="font-family: 'Poppins', sans-serif;">Lingkungan Ramah untuk Anak-Anak</p>
@@ -99,34 +88,6 @@ include '../includes/header.php';
             font-family: 'Poppins', sans-serif;
         }
         
-        /* Tombol Login & Sign Up */
-        .btn-login {
-            border: 2px solid #4682B4;
-            color: #4682B4;
-            font-weight: 500;
-            border-radius: 6px;
-            padding: 6px 16px;
-            background: white;
-            transition: all 0.3s ease;
-        }
-        .btn-login:hover {
-            background-color: #4682B4;
-            color: white;
-        }
-
-        .btn-signup {
-            background-color: #4682B4;
-            color: white;
-            font-weight: 500;
-            border-radius: 6px;
-            padding: 6px 16px;
-            border: 2px solid #4682B4;
-            transition: all 0.3s ease;
-        }
-        .btn-signup:hover {
-            background-color: #315f86;
-            border-color: #315f86;
-        }
         .hero-section {
             position: relative;
             min-height: 100vh;
@@ -249,7 +210,6 @@ include '../includes/header.php';
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         const carousel = new bootstrap.Carousel(document.getElementById('heroCarousel'), {

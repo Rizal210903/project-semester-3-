@@ -104,12 +104,16 @@ if (isset($_POST['confirm_submit']) && !$error) {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
-            background: #E0F7FA;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+          
+         font-family: 'Poppins', sans-serif;
+         background: linear-gradient(180deg, #f9fcff 0%, #e7f1ff 100%);
+         overflow-x: hidden;
+         min-height: 100vh;
+         display: flex;
+         justify-content: center;
+         align-items: center;
+
+
         }
         .form-container {
             background: rgba(255, 255, 255, 0.95);
@@ -162,7 +166,7 @@ if (isset($_POST['confirm_submit']) && !$error) {
         
         <form method="POST" enctype="multipart/form-data" id="registrationForm">
             <div class="mb-3">
-                <label for="nama_anak" class="form-label">Nama Anak *</label>
+                <label for="nama_anak" class="form-label">Nama Lengkap Anak *</label>
                 <input type="text" class="form-control" id="nama_anak" name="nama_anak" value="<?php echo htmlspecialchars($nama_anak ?? ''); ?>" required>
             </div>
             <div class="mb-3">

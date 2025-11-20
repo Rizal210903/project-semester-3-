@@ -1,3 +1,42 @@
+<?php
+include 'sidebar.php';
+
+// Koneksi ke database
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "tk_pertiwi_db";
+
+try {
+  $pdo = new PDO("mysql:host=$servername;dbname=$dbname;charset=utf8mb4", $username, $password);
+  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+  die("Koneksi gagal: " . $e->getMessage());
+}
+
+// Hitung total berdasarkan status_ppdb
+$stmt_pending = $pdo->query("SELECT COUNT(*) FROM pendaftaran WHERE status_ppdb = 'pending'");
+$jumlah_pending = $stmt_pending->fetchColumn();
+
+$stmt_diterima = $pdo->query("SELECT COUNT(*) FROM pendaftaran WHERE status_ppdb = 'diterima'");
+$jumlah_diterima = $stmt_diterima->fetchColumn();
+
+// Ambil data pendaftaran per tahun untuk grafik
+$stmt_chart = $pdo->query("
+  SELECT YEAR(tanggal_daftar) AS tahun, COUNT(*) AS total
+  FROM pendaftaran
+  GROUP BY YEAR(tanggal_daftar)
+  ORDER BY tahun ASC
+");
+
+$tahun = [];
+$total = [];
+while ($row = $stmt_chart->fetch(PDO::FETCH_ASSOC)) {
+  $tahun[] = $row['tahun'];
+  $total[] = $row['total'];
+}
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -5,7 +44,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Dashboard - TK Pertiwi</title>
 
-  <!-- Bootstrap & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -19,121 +57,41 @@
       overflow-x: hidden;
     }
 
-    /* SIDEBAR */
-    .sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 250px;
-      height: 100vh;
-      background-color: #fff;
-      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-      padding: 20px;
-      transition: width 0.3s ease, left 0.3s ease;
-      z-index: 99;
-      overflow-y: auto;
-    }
-
-    .sidebar.collapsed {
-      width: 70px;
-    }
-
-    .sidebar .logo {
-      font-size: 20px;
-      font-weight: 700;
-      color: #007bff;
-      margin-bottom: 30px;
-      text-align: center;
-    }
-
-    .sidebar.collapsed .logo span,
-    .sidebar.collapsed .nav-link span,
-    .sidebar.collapsed .dropdown-menu {
-      display: none;
-    }
-
-    .sidebar .nav-link {
-      display: flex;
-      align-items: center;
-      padding: 12px 15px;
-      color: #333;
-      border-radius: 8px;
-      margin-bottom: 8px;
-      transition: 0.3s;
-      text-decoration: none;
-    }
-
-    .sidebar .nav-link:hover,
-    .sidebar .nav-link.active {
-      background-color: #e6f0ff;
-      color: #007bff;
-    }
-
-    .sidebar .nav-link i {
-      font-size: 18px;
-      margin-right: 12px;
-      width: 25px;
-      text-align: center;
-    }
-
-    .dropdown-toggle::after {
-      margin-left: auto;
-      transition: transform 0.3s;
-    }
-
-    .dropdown-menu {
-      padding-left: 40px;
-      background: transparent;
-      border: none;
-      box-shadow: none;
-    }
-
-    .dropdown-menu .nav-link {
-      padding: 8px 15px;
-      font-size: 14px;
-    }
-
-    .show .dropdown-toggle::after {
-      transform: rotate(180deg);
-    }
-
-    /* HEADER */
-    .header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 60px;
-      background-color: #007bff;
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      color: #fff;
-      z-index: 1000;
-      justify-content: space-between;
-    }
-
+            /* Header */
+        .header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 60px;
+            background-color: #007bff;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            color: #fff;
+            z-index: 1000;
+        }
+        .header .menu-toggle {
+            font-size: 24px;
+            cursor: pointer;
+            margin-right: 20px;
+        }
+        .header .title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .header .icons {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
     .menu-toggle {
       font-size: 24px;
       cursor: pointer;
     }
 
-    .header .title {
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .header .icons {
-      display: flex;
-      gap: 20px;
-      font-size: 18px;
-      cursor: pointer;
-    }
-
-    /* MAIN CONTENT */
     .main-content {
       margin-left: 250px;
-      padding: 90px 25px 30px;
+      padding: 90px 30px 30px;
       transition: margin-left 0.3s ease;
     }
 
@@ -188,63 +146,7 @@
       color: #555;
     }
 
-    /* BLUE CARD */
-    .blue-card {
-      background-color: #007bff;
-      color: white;
-      border-radius: 12px;
-      padding: 25px;
-      margin-bottom: 25px;
-      text-align: center;
-    }
-
-    .blue-card h2 {
-      font-size: 18px;
-      margin-bottom: 20px;
-      font-weight: 600;
-    }
-
-    .blue-card .stats {
-      display: flex;
-      justify-content: center;
-      gap: 60px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-
-    .blue-card .stats > div {
-      text-align: center;
-    }
-
-    .blue-card .number {
-      font-size: 28px;
-      font-weight: bold;
-    }
-
-    .blue-card .label {
-      font-size: 14px;
-      opacity: 0.9;
-    }
-
-    .blue-card .btn-kelola {
-      background-color: #339dff;
-      border: none;
-      padding: 10px 30px;
-      border-radius: 8px;
-      color: white;
-      font-weight: 600;
-      font-size: 15px;
-      cursor: pointer;
-      transition: 0.3s;
-      text-decoration: none;
-      display: inline-block;
-    }
-
-    .blue-card .btn-kelola:hover {
-      background-color: #006ae0;
-    }
-
-    /* GRAPH */
+    /* GRAFIK */
     .graph-container {
       background-color: #fff;
       border-radius: 12px;
@@ -259,14 +161,6 @@
     }
 
     @media (max-width: 768px) {
-      .sidebar {
-        left: -250px;
-      }
-
-      .sidebar.active {
-        left: 0;
-      }
-
       .main-content {
         margin-left: 0;
         padding: 90px 15px;
@@ -276,19 +170,16 @@
 </head>
 <body>
 
-  <!-- HEADER -->
-  <div class="header">
-    <i class="bi bi-list menu-toggle"></i>
-    <div class="title">ADMIN DASHBOARD</div>
-    <div class="icons">
-      <i class="bi bi-bell"></i>
-      <i class="bi bi-envelope"></i>
-      <i class="bi bi-person-circle"></i>
-    </div>
-  </div>
 
-  <!-- SIDEBAR -->
-  <?php include 'sidebar.php'; ?>
+  <header class="header">
+      <div class="menu-toggle">&#9776;</div>
+      <div class="title">ADMIN DASHBOARD</div>
+      <div class="icons">
+          <div><i class="bi bi-envelope"></i></div>
+          <div><i class="bi bi-bell"></i></div>
+          <div><i class="bi bi-person-circle"></i></div>
+      </div>
+  </header>
 
   <!-- MAIN CONTENT -->
   <main class="main-content">
@@ -296,28 +187,13 @@
 
     <div class="card-container">
       <div class="card-box">
-        <div class="number">25</div>
+        <div class="number"><?= $jumlah_pending; ?></div>
         <div class="label">Menunggu Verifikasi</div>
       </div>
       <div class="card-box">
-        <div class="number">10</div>
+        <div class="number"><?= $jumlah_diterima; ?></div>
         <div class="label">Diterima</div>
       </div>
-    </div>
-
-    <div class="blue-card">
-      <h2>Pendaftar Baru Tahun Ini</h2>
-      <div class="stats">
-        <div>
-          <div class="number">25</div>
-          <div class="label">Menunggu Verifikasi</div>
-        </div>
-        <div>
-          <div class="number">10</div>
-          <div class="label">Diterima</div>
-        </div>
-      </div>
-      <a href="manage-pbdb.php" class="btn-kelola">Kelola Pendaftaran</a>
     </div>
 
     <div class="graph-container">
@@ -326,43 +202,30 @@
     </div>
   </main>
 
-  <!-- Bootstrap & Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Sidebar Toggle
-    const menuToggle = document.querySelector('.menu-toggle');
-    const sidebar = document.querySelector('.sidebar');
-    const mainContent = document.querySelector('.main-content');
 
-    if (menuToggle) {
-      menuToggle.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-          sidebar.classList.toggle('active');
-        } else {
-          sidebar.classList.toggle('collapsed');
-          mainContent.classList.toggle('collapsed');
-        }
-      });
-    }
+        // Sidebar toggle
+        const menuToggle = document.querySelector('.menu-toggle');
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('collapsed');
+        });
 
-    // Sidebar dropdown (tidak auto tertutup)
-    document.querySelectorAll('.dropdown-toggle').forEach(item => {
-      item.addEventListener('click', e => {
-        e.preventDefault();
-        const menu = item.nextElementSibling;
-        menu.classList.toggle('show');
-      });
-    });
+    // Data dari PHP untuk Chart.js
+    const tahun = <?= json_encode($tahun); ?>;
+    const total = <?= json_encode($total); ?>;
 
-    // Chart.js
     const ctx = document.getElementById('myChart').getContext('2d');
     new Chart(ctx, {
       type: 'line',
       data: {
-        labels: ['2020', '2021', '2022', '2023', '2024'],
+        labels: tahun,
         datasets: [{
-          label: 'Pendaftaran',
-          data: [20, 55, 35, 45, 60],
+          label: 'Jumlah Pendaftar',
+          data: total,
           fill: true,
           backgroundColor: 'rgba(0, 123, 255, 0.15)',
           borderColor: '#007bff',
@@ -374,16 +237,8 @@
       },
       options: {
         responsive: true,
-        plugins: {
-          legend: { display: false }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            max: 70,
-            ticks: { stepSize: 10 }
-          }
-        }
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
       }
     });
   </script>
