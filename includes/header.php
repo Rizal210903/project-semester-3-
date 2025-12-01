@@ -180,7 +180,7 @@ if ($profile_file && file_exists($_SERVER['DOCUMENT_ROOT'] . '/project-semester-
                                 <?php else: ?>
                                     <!-- Menu khusus USER -->
                                     <li>
-                                        <a class="dropdown-item" href="/project-semester-3-/pages/profil_saya.php">
+                                        <a class="dropdown-item" href="/project-semester-3-/pages/edit_profil.php">
                                             <i class="bi bi-person-lines-fill me-2"></i>Profil Saya
                                         </a>
                                     </li>
@@ -188,11 +188,12 @@ if ($profile_file && file_exists($_SERVER['DOCUMENT_ROOT'] . '/project-semester-
 
                                 <li><hr class="dropdown-divider"></li>
 
-                                <li>
-                                    <a class="dropdown-item text-danger" href="/project-semester-3-/pages/logout.php">
-                                        <li><a class="dropdown-item" href="logout.php">Logout</a></li>
-                                    </a>
-                                </li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="/project-semester-3-/pages/logout.php">
+                                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                        </a>
+                                    </li>
+
                             </ul>
                         </li>
                     <?php else: ?>

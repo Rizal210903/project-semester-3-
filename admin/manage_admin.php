@@ -200,9 +200,7 @@ $admins = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="menu-toggle"><i class="bi bi-list"></i></div>
         <div class="title">KELOLA ADMIN</div>
         <div class="icons">
-            <i class="bi bi-bell"></i>
-            <i class="bi bi-envelope"></i>
-            <i class="bi bi-person-circle"></i>
+           
         </div>
     </div>
 

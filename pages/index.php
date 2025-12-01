@@ -2,7 +2,6 @@
 include '../includes/header.php';
 ?>
 
-<body>
     <main class="container-fluid p-0">
         <!-- Hero Section Slider -->
         <section class="hero-section">
@@ -209,7 +208,7 @@ include '../includes/header.php';
         }
     </style>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         const carousel = new bootstrap.Carousel(document.getElementById('heroCarousel'), {

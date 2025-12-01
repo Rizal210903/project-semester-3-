@@ -28,21 +28,18 @@ if ($q_user->num_rows == 0) {
 }
 $user = $q_user->fetch_assoc();
 $email_user = $user['email'];
-$stmt_user->close();
+$stmt_user->close();    
 
 
 // --- 2. Ambil ID Pendaftar (MENGGUNAKAN PREPARED STATEMENT) ---
 $stmt_pendaftar = $conn->prepare("
     SELECT id FROM pendaftaran 
-    WHERE email = ?
+    WHERE user_id = ?
     ORDER BY id DESC LIMIT 1
 ");
+$stmt_pendaftar->bind_param("i", $user_id); // pakai user_id sebagai integer
 
-if (!$stmt_pendaftar) {
-    die("Error menyiapkan statement pendaftar: " . $conn->error);
-}
 
-$stmt_pendaftar->bind_param("s", $email_user);
 $stmt_pendaftar->execute();
 $q_pendaftar = $stmt_pendaftar->get_result();
 
@@ -120,7 +117,14 @@ body {
         <!-- FIX ERROR: NAME HARUS SAMA DENGAN YANG DICEK DI process_payment.php -->
         <input type="file" name="bukti_pembayaran" class="form-control" accept="image/*,.pdf" required>
 
-        <button type="submit" class="btn btn-primary w-100 mt-4 py-2">Simpan Pembayaran</button>
+       <button type="submit" class="btn btn-primary w-100 mt-4 py-2">Simpan Pembayaran</button>
+
+        <!-- Tombol Bayar Nanti -->
+     <a href="/project-semester-3-/pages/status.php" 
+     class="btn btn-secondary w-100 mt-3 py-2">
+        Bayar Nanti
+</a>
+
     </form>
 </div>
 

@@ -108,8 +108,8 @@ if (isset($_GET['delete'])) {
 <div class="header">
     <div class="logo d-flex align-items-center">
         <i class="bi bi-images me-3 fs-4"></i> KELOLA GALERI
-    </div>
-    <div class="icons">
+   
+    
         <i class="bi bi-person-circle"></i>
     </div>
 </div>

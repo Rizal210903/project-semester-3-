@@ -160,9 +160,14 @@ $agenda = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </section>
     </main>
 
-    <footer class="text-center py-4" style="background:#e7f1ff;">
-        <p class="mb-0 text-muted">&copy; 2025 TK Pertiwi. Semua hak cipta dilindungi.</p>
-    </footer>
+   <?php
+    $footerPath = $_SERVER['DOCUMENT_ROOT'] . '/project-semester-3-/includes/footer.php';
+    if (!file_exists($footerPath)) {
+        echo "<p style='color:red;'>Footer ga ketemu di: $footerPath</p>";
+        exit;
+    }
+    include $footerPath;
+    ?>
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {

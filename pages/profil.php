@@ -305,7 +305,4 @@ include '../includes/config.php'; // koneksi ke database
 </style>
 
 <?php include '../includes/footer.php'; ?>
-
-<!-- ======================= SCRIPT ======================= -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.js"></script>

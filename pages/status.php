@@ -13,33 +13,34 @@ try {
     $pdo = new PDO("mysql:host=$servername;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Ambil ID pendaftaran dari session
-    $pendaftaran_id = $_SESSION['pendaftaran_id'] ?? null;
+    // Cek login
+    if (!isset($_SESSION['user_id'])) {
+        $error = "Silakan login terlebih dahulu.";
+    } else {
+        $user_id = $_SESSION['user_id'];
 
-    if ($pendaftaran_id) {
-        // Ambil data pendaftaran + status pembayaran terbaru dari tabel payments
+        // Ambil data pendaftaran terbaru user
         $stmt = $pdo->prepare("
             SELECT p.*, pay.status_pembayaran
             FROM pendaftaran p
             LEFT JOIN payments pay ON p.id = pay.pendaftar_id
-            WHERE p.id = ?
+            WHERE p.user_id = ?
             ORDER BY pay.id DESC
             LIMIT 1
         ");
-        $stmt->execute([$pendaftaran_id]);
+        $stmt->execute([$user_id]);
         $status_data = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$status_data) {
-            $error = "Data pendaftaran tidak ditemukan!";
+            $error = "Anda belum melakukan pendaftaran.";
         }
-    } else {
-        $error = "Anda belum melakukan pendaftaran atau session habis. Silakan daftar terlebih dahulu.";
     }
 
 } catch(PDOException $e) {
     $error = "Gagal mengambil data: " . $e->getMessage();
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -47,7 +48,6 @@ try {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Status Pendaftaran - TK Pertiwi</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
 <style>
 body {
@@ -74,8 +74,10 @@ body {
 }
 .status-card h4 { color: #1E90FF; }
 .badge-status { font-size: 1rem; padding: 6px 12px; border-radius: 8px; }
-.btn-home { margin-top: 20px; background: linear-gradient(45deg, #1E90FF, #00B7EB); border: none; border-radius: 10px; color: #fff; padding: 10px 20px; text-decoration: none; }
+.btn-home { margin-top: 15px; background: linear-gradient(45deg, #1E90FF, #00B7EB); border: none; border-radius: 10px; color: #fff; padding: 10px 20px; text-decoration: none; }
 .btn-home:hover { background: linear-gradient(45deg, #104E8B, #009ACD); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(30,144,255,0.4); }
+.btn-payment { margin-top: 10px; background: linear-gradient(45deg, #FFA500, #FF8C00); border: none; border-radius: 10px; color: #fff; padding: 10px 20px; text-decoration: none; }
+.btn-payment:hover { background: linear-gradient(45deg, #FF8C00, #FF7F50); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,140,0,0.4); }
 </style>
 </head>
 <body>
@@ -111,20 +113,41 @@ body {
                     ?>
                 </span>
             </p>
-            <p><strong>Status PPDB:</strong>
-                <span class="badge badge-status
-                    <?php
-                        if($status_data['status_ppdb'] === 'diterima') echo 'bg-success';
-                        elseif($status_data['status_ppdb'] === 'pending') echo 'bg-warning text-dark';
-                        else echo 'bg-danger';
-                    ?>">
-                    <?php
-                        if($status_data['status_ppdb'] === 'diterima') echo 'Diterima';
-                        elseif($status_data['status_ppdb'] === 'pending') echo 'Menunggu Verifikasi Dokumen';
-                        else echo 'Ditolak';
-                    ?>
-                </span>
-            </p>
+           <p><strong>Status PPDB:</strong>
+    <span class="badge badge-status
+        <?php
+            if ($status_data['status_pembayaran'] === 'belum_bayar') {
+                echo 'bg-secondary'; // bisa pakai abu-abu untuk belum bayar
+            } elseif ($status_data['status_ppdb'] === 'diterima') {
+                echo 'bg-success';
+            } elseif ($status_data['status_ppdb'] === 'pending') {
+                echo 'bg-warning text-dark';
+            } else {
+                echo 'bg-danger';
+            }
+        ?>
+    ">
+        <?php
+            if ($status_data['status_pembayaran'] === 'belum_bayar') {
+                echo '-'; // tampilkan kosong atau teks "Belum Bayar"
+            } elseif ($status_data['status_ppdb'] === 'diterima') {
+                echo 'Diterima';
+            } elseif ($status_data['status_ppdb'] === 'pending') {
+                echo 'Menunggu Verifikasi Dokumen';
+            } else {
+                echo 'Ditolak';
+            }
+        ?>
+    </span>
+</p>
+
+
+            <?php if ($status_data['status_pembayaran'] !== 'dibayar'): ?>
+                <div class="text-center">
+                    <a href="/project-semester-3-/pages/payment.php" class="btn btn-payment">Lanjutkan Pembayaran</a>
+                </div>
+            <?php endif; ?>
+
         </div>
         <div class="text-center">
             <a href="/project-semester-3-/pages/index.php" class="btn btn-home">Kembali ke Beranda</a>

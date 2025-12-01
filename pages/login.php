@@ -1,8 +1,10 @@
 <?php
 session_start();
-ob_start(); // Mulai output buffering
+ob_start();
 
-// Konfigurasi database
+// ---------------------------
+// Konfigurasi DB
+// ---------------------------
 $servername = "localhost";
 $username = "root";
 $password = "";
@@ -11,115 +13,206 @@ $dbname = "tk_pertiwi_db";
 try {
     $pdo = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch(PDOException $e) {
-    error_log("Koneksi gagal: " . $e->getMessage());
+} catch (PDOException $e) {
     die("Koneksi ke database gagal!");
 }
 
 $error = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $loginInput = trim($_POST['login'] ?? '');
-    $password = $_POST['password'] ?? '';
+$loginValue = '';
 
-    // Ambil data user berdasarkan username atau email
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    $loginInput = trim($_POST['login'] ?? '');
+    $passwordInput = $_POST['password'] ?? '';
+
+    $loginValue = htmlspecialchars($loginInput, ENT_QUOTES, 'UTF-8');
+
     $stmt = $pdo->prepare("SELECT * FROM users WHERE username = :login OR email = :login LIMIT 1");
     $stmt->execute(['login' => $loginInput]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($user && password_verify($password, $user['password'])) {
-        // Regenerate session untuk keamanan
+    if ($user && password_verify($passwordInput, $user['password'])) {
+
         session_regenerate_id(true);
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['role'] = $user['role'];
 
-        ob_end_clean(); // Bersihkan buffer sebelum redirect
+        ob_end_clean();
 
-        // Arahkan berdasarkan role
         if ($user['role'] === 'admin') {
+            $_SESSION['admin_username'] = $user['username'];
+            $_SESSION['admin_id'] = $user['id'];
             header("Location: /project-semester-3-/admin/admin_dashboard.php");
-        } else {
-            header("Location: /project-semester-3-/pages/index.php");
+            exit;
         }
+
+        header("Location: /project-semester-3-/pages/index.php");
         exit;
+
     } else {
         $error = "Username/email atau password salah!";
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login - TK Pertiwi</title>
+
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
-body {
-    font-family: 'Poppins', sans-serif;
-    background: #E0F7FA;
-}
-.login-section {
-    background: #fff;
-    border: 2px solid #45B7D1;
-    border-radius: 10px;
-    padding: 30px;
-    margin-top: 40px;
-    max-width: 450px;
-    margin-left: auto;
-    margin-right: auto;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-}
-.login-section h1 {
-    color: #0077b6;
-    text-align: center;
-    margin-bottom: 25px;
-    font-weight: 700;
-}
-.form-label { font-weight: 500; }
-.btn-primary { background-color: #0077b6; border: none; }
-.btn-primary:hover { background-color: #005f87; }
-.error { color: red; font-size: 0.9rem; text-align: center; }
-.text-center a { text-decoration: none; color: #0077b6; }
-.text-center a:hover { text-decoration: underline; }
+    body {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(180deg, #f9fcff 0%, #e7f1ff 100%);
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .login-card {
+        width: 450px;
+        padding: 40px;
+        border-radius: 30px;
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border: 1.5px solid rgba(255, 255, 255, 0.55);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+        transition: .3s ease;
+    }
+
+    .login-card:hover {
+        background: rgba(255, 255, 255, 0.32);
+        border: 1.5px solid rgba(255, 255, 255, 0.75);
+        transform: scale(1.015);
+    }
+
+    .login-card h2 {
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 25px;
+        color: #003366;
+    }
+
+    .form-control {
+        padding-left: 45px;
+        height: 45px;
+        border-radius: 12px;
+        border: 1px solid #ccc;
+        font-size: 16px;
+        background: rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+
+    .form-control:focus {
+        border: 1px solid #0066ff;
+        background: rgba(255, 255, 255, 0.75);
+        box-shadow: 0 0 8px rgba(0, 110, 255, 0.3);
+    }
+
+    .icon-input {
+        position: absolute;
+        left: 15px;
+        top: 10px;
+        font-size: 20px;
+        color: #324b81;
+    }
+
+    .toggle-eye {
+        position: absolute;
+        right: 15px;
+        top: 10px;
+        font-size: 20px;
+        cursor: pointer;
+        color: #324b81;
+    }
+
+    .btn-login {
+        width: 100%;
+        height: 50px;
+        border-radius: 12px;
+        background: #005BBB;
+        color: white;
+        font-size: 18px;
+        font-weight: 600;
+        border: none;
+        transition: .25s ease;
+    }
+
+    .btn-login:hover {
+        background: #004099;
+        transform: scale(1.03);
+    }
+
+    .error {
+        text-align: center;
+        color: red;
+        margin-bottom: 10px;
+    }
 </style>
 </head>
+
 <body>
 
-<main class="container-fluid p-0">
-    <section class="py-5">
-        <div class="container">
-            <div class="login-section animate__animated animate__fadeInUp">
-                <h1>Login</h1>
-                <?php if ($error): ?>
-                    <p class="error"><?= htmlspecialchars($error) ?></p>
-                <?php endif; ?>
+<div class="login-card">
+    <h2>Login Akun</h2>
 
-                <form method="POST" action="">
-                    <div class="mb-3">
-                        <label for="login" class="form-label">Username / Email</label>
-                        <input type="text" class="form-control" id="login" name="login" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Login</button>
-                </form>
+    <?php if ($error): ?>
+        <p class="error"><?= $error ?></p>
+    <?php endif; ?>
 
-                <div class="text-center mt-2">
-                    <a href="/project-semester-3-/pages/forgot_password.php">Lupa Password?</a>
-                </div>
-                
-                <p class="mt-3 text-center">
-                    Belum punya akun? <a href="/project-semester-3-/pages/register.php">Daftar di sini</a>
-                </p>
-            </div>
+    <form method="POST">
+
+        <label>Username / Email</label>
+        <div class="position-relative mb-3">
+            <i class="bi bi-person icon-input"></i>
+            <input type="text" name="login" class="form-control" required
+                   value="<?= $loginValue ?>">
         </div>
-    </section>
-</main>
+
+        <label>Password</label>
+        <div class="position-relative mb-4">
+            <i class="bi bi-lock icon-input"></i>
+
+            <input type="password" name="password" id="passwordField" class="form-control" required>
+
+            <!-- Show / Hide Password -->
+            <i class="bi bi-eye toggle-eye" id="togglePassword"></i>
+        </div>
+
+        <button class="btn-login" type="submit">Login</button>
+
+        <p class="text-center mt-3">
+            Lupa password? <a href="/project-semester-3-/pages/forgot_password.php">Klik di sini</a>
+        </p>
+
+        <p class="text-center">
+            Belum punya akun? <a href="register.php" class="fw-bold">Daftar di sini</a>
+        </p>
+
+    </form>
+</div>
+
+<!-- SCRIPT SHOW/HIDE PASSWORD -->
+<script>
+document.getElementById("togglePassword").addEventListener("click", function () {
+    const passwordField = document.getElementById("passwordField");
+
+    const type = passwordField.type === "password" ? "text" : "password";
+    passwordField.type = type;
+
+    this.classList.toggle("bi-eye");
+    this.classList.toggle("bi-eye-slash");
+});
+</script>
 
 <?php ob_end_flush(); ?>
 </body>

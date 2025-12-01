@@ -1,111 +1,179 @@
 <?php
 include '../includes/header.php';
 ?>
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            margin: 0;
-            background: #E0F6FF; /* Biru muda lembut */
-        }
-        .navbar {
-            background: #ffffffff;
-            padding: 10px 20px;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-        .navbar-brand img {
-            max-height: 40px;
-        }
-        .navbar-brand, .nav-link {
-            font-family: 'Poppins', sans-serif; /* Font navbar Poppins */
-            font-weight: 500; /* Sedang */
-            color: #333 !important; /* Teks hitam lembut */
-            margin: 0 10px;
-        }
-        .nav-link:hover {
-            color: #4682B4 !important; /* Biru steel saat hover */
-            font-weight: 600; /* Lebih tebal saat hover */
-        }
-        .hero-section {
-            position: relative;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-        .sambutan-section {
-            background: linear-gradient(135deg, #D1F2EB, #E0F7FA);
-            padding: 50px 0;
-        }
-        .gallery-section {
-            background: linear-gradient(135deg, #B0E0E6, #D1F2EB);
-            padding: 50px 0;
-        }
-        .map-section {
-            background: linear-gradient(135deg, #D1F2EB, #E0F7FA);
-            padding: 50px 0;
-        }
-        .text-4682B4 { color: #4682B4; }
-        .text-333 { color: #333; }
-        .text-555 { color: #555; }
-        .sambutan-box {
-            background: rgba(209, 242, 235, 0.95);
-            padding: 20px;
-            border-radius: 10px;
-            border: 3px dashed #87CEEB;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-    </style>
-</head>
-<body>
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(180deg, #f9fcff, #e7f1ff);
+        margin: 0;
+    }
 
-<main class="container-fluid p-0">
-    <section class="kontak-section py-5" style="background: #E0F6FF;">
-        <div class="container">
-            <h1 class="text-center mb-5 text-primary animate__animated animate__fadeIn" style="font-family: 'Poppins', sans-serif;">Kontak Kami</h1>
-            <div class="row">
-                <div class="col-md-6">
-                    <h3 class="text-center mb-4 text-success" style="font-family: 'Poppins', sans-serif;">Info Kontak</h3>
-                    <p style="font-family: 'Poppins', sans-serif;"><strong>Alamat:</strong> Jl. WR Supratman No.6, Kauman, Kepatihan, Kec. Kaliwates, Kabupaten Jember, Jawa Timur 68131</p>
-                    <p style="font-family: 'Poppins', sans-serif;"><strong>Telepon:</strong> 022-1234567</p>
-                    <p style="font-family: 'Poppins', sans-serif;"><strong>Email:</strong> tkpertiwi@gmail.com</p>
-                    <p style="font-family: 'Poppins', sans-serif;"><strong>Jam Operasional:</strong> Senin-Jumat, 08:00 - 15:00 WIB</p>
+    h1, h3, label {
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .contact-container {
+        max-width: 1100px;
+        margin: auto;
+        padding: 40px 20px;
+    }
+
+    /* Card Glass iOS */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.35);
+        border-radius: 20px;
+        padding: 35px;
+        border: 1.5px solid rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(25px) saturate(180%);
+        -webkit-backdrop-filter: blur(25px) saturate(180%);
+        box-shadow: 0 20px 45px rgba(0,0,0,0.12);
+        animation: fadeIn 0.7s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(25px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-title {
+        font-size: 32px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 40px;
+        color: #0f1d55;
+    }
+
+    /* Input field modern */
+    .icon-input {
+        position: absolute;
+        left: 15px;
+        top: 10px;
+        font-size: 20px;
+        color: #3f5ea1;
+    }
+
+    .form-control {
+        padding-left: 45px;
+        height: 48px;
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,0.15);
+        background: rgba(255,255,255,0.55);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+
+    .form-control:focus {
+        border: 1px solid #0066ff;
+        background: rgba(255,255,255,0.8);
+        box-shadow: 0 0 6px rgba(0,110,255,0.3);
+    }
+
+    textarea.form-control {
+        height: auto;
+        padding-top: 14px;
+        padding-bottom: 14px;
+    }
+
+    /* Tombol */
+    .btn-send {
+        width: 100%;
+        height: 48px;
+        border-radius: 14px;
+        background: #005BBB;
+        color: white;
+        font-weight: 600;
+        font-size: 17px;
+        border: none;
+        transition: 0.3s;
+    }
+
+    .btn-send:hover {
+        background: #004099;
+        transform: scale(1.03);
+    }
+
+    .contact-info p {
+        font-size: 15px;
+        margin-bottom: 7px;
+        color: #333;
+    }
+
+    .contact-icon {
+        color: #005BBB;
+        margin-right: 8px;
+        font-size: 20px;
+    }
+</style>
+
+<main class="contact-container">
+
+    <h1 class="section-title">Kontak Kami</h1>
+
+    <div class="row g-4">
+
+        <!-- Info Kontak -->
+        <div class="col-md-5">
+            <div class="glass-card">
+                <h3 class="text-primary mb-3 text-center">Info Kontak</h3>
+
+                <div class="contact-info">
+                    <p><i class="bi bi-geo-alt contact-icon"></i>Jl. WR Supratman No.6, Jember</p>
+                    <p><i class="bi bi-telephone-forward contact-icon"></i>022-1234567</p>
+                    <p><i class="bi bi-envelope contact-icon"></i>tkpertiwi@gmail.com</p>
+                    <p><i class="bi bi-clock contact-icon"></i>Senin - Jumat, 08.00 - 15.00 WIB</p>
                 </div>
-                <div class="col-md-6">
-                    <h3 class="text-center mb-4 text-success" style="font-family: 'Poppins', sans-serif;">Form Kontak</h3>
-                    <form>
-                        <div class="mb-3">
-                            <label for="nama" class="form-label" style="font-family: 'Poppins', sans-serif;">Nama</label>
-                            <input type="text" class="form-control" id="nama">
-                        </div>
-                        <div class="mb-3">
-                            <label for="email" class="form-label" style="font-family: 'Poppins', sans-serif;">Email</label>
-                            <input type="email" class="form-control" id="email">
-                        </div>
-                        <div class="mb-3">
-                            <label for="pesan" class="form-label" style="font-family: 'Poppins', sans-serif;">Pesan</label>
-                            <textarea class="form-control" id="pesan" rows="3"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary" style="font-family: 'Poppins', sans-serif;">Kirim Pesan</button>
-                    </form>
+
+                <!-- Map -->
+                <div class="mt-4">
+                    <iframe 
+                        
+                        width="100%" height="250" style="border-radius:14px; border:0;" allowfullscreen loading="lazy">
+                    </iframe>
                 </div>
             </div>
         </div>
-    </section>
+
+        <!-- Form Kontak -->
+        <div class="col-md-7">
+            <div class="glass-card">
+                <h3 class="text-primary mb-4 text-center">Form Kontak</h3>
+
+                <form>
+
+                    <label class="mb-1">Nama</label>
+                    <div class="position-relative mb-3">
+                        <i class="bi bi-person icon-input"></i>
+                        <input type="text" id="nama" class="form-control" placeholder="Masukkan nama">
+                    </div>
+
+                    <label class="mb-1">Email</label>
+                    <div class="position-relative mb-3">
+                        <i class="bi bi-envelope-at icon-input"></i>
+                        <input type="email" id="email" class="form-control" placeholder="Masukkan email">
+                    </div>
+
+                    <label class="mb-1">Pesan</label>
+                    <div class="position-relative mb-4">
+                        <i class="bi bi-chat-dots icon-input"></i>
+                        <textarea id="pesan" rows="4" class="form-control" placeholder="Tulis pesan..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-send">
+                        Kirim Pesan
+                    </button>
+
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+
 </main>
 
-    <script>
-    function showCategory(category) {
-        const items = document.querySelectorAll('.gallery-item');
-        items.forEach(item => {
-            item.style.display = 'none';
-            if (category === 'all' || item.classList.contains(category)) {
-                item.style.display = 'block';
-            }
-        });
-    }
-    </script>
-    <footer class="bg-light text-center p-3 mt-5" style="background: #E0F6FF; color: #333;">
-        <p class="mb-0">&copy; 2025 TK Pertiwi. Semua hak cipta dilindungi.</p>
-    </footer>
-</body>
-</html>
+<?php
+$footerPath = $_SERVER['DOCUMENT_ROOT'] . '/project-semester-3-/includes/footer.php';
+if (file_exists($footerPath)) {
+    include $footerPath;
+}
+?>

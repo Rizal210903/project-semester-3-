@@ -2,7 +2,7 @@
 $current_page = basename($_SERVER['PHP_SELF']);
 
 // Tentukan halaman-halaman yang termasuk dalam submenu "Dashboards"
-$dashboard_pages = ['manage-pbdb.php', 'galeri.php', 'manage_agenda.php', 'manage_payments.php', 'manage_teachers.php', 'manage_admin.php'];
+$dashboard_pages = ['manage-pbdb.php', 'galeri.php', 'manage_agenda.php', 'manage_payments.php', 'manage_teachers.php', 'manage_admin.php', 'manage_pbdb_info.php'];
 $is_dashboard_active = in_array($current_page, $dashboard_pages);
 ?>
 
@@ -161,7 +161,7 @@ $is_dashboard_active = in_array($current_page, $dashboard_pages);
                         <i class="bi bi-image"></i><span>Galeri Foto</span>
                     </a>
                 </li>
-                <li class="nav-item">
+                
                     <a href="manage_pbdb_info.php" class="<?= $current_page == 'manage_pbdb_info.php' ? 'active' : '' ?>">
                       <i class="bi bi-info-circle"></i> Kelola Info PPDB
                     </a>

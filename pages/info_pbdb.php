@@ -15,7 +15,7 @@ try {
 
 /* ==========================================================
    AMBIL DATA PPDB DARI DATABASE (JSON)
-   ========================================================== */
+========================================================== */
 
 $stmt = $pdo->prepare("SELECT content FROM ppdb_info WHERE id = 1 LIMIT 1");
 $stmt->execute();
@@ -23,10 +23,19 @@ $stmt->execute();
 $data = $stmt->fetchColumn();
 $data = $data ? json_decode($data, true) : ["jadwal" => [], "syarat" => ""];
 
-// Ambil JSON
 $jadwal = $data["jadwal"] ?? [];
 $syarat = $data["syarat"] ?? "";
 ?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Info PPDB TK Pertiwi</title>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <style>
     body {
         font-family: 'Poppins', sans-serif;
@@ -67,6 +76,7 @@ $syarat = $data["syarat"] ?? "";
     }
 </style>
 
+</head>
 <body>
 
 <main class="container-fluid p-0">
@@ -90,33 +100,28 @@ $syarat = $data["syarat"] ?? "";
                     <div class="card-info h-100">
                         <h2 class="section-title">Jadwal PPDB</h2>
                         <ul class="list-group list-group-flush">
-
                             <?php if (empty($jadwal)): ?>
                                 <li class="list-group-item">Jadwal PPDB belum diisi admin.</li>
-
                             <?php else: ?>
                                 <?php foreach ($jadwal as $item): ?>
                                     <li class="list-group-item">
                                         <strong><?= htmlspecialchars(ucwords($item["nama"])) ?></strong>:
-                                        <?= date("j F Y", strtotime($item["mulai"])) ?>
-                                        -
+                                        <?= date("j F Y", strtotime($item["mulai"])) ?> -
                                         <?= date("j F Y", strtotime($item["selesai"])) ?>
                                     </li>
                                 <?php endforeach; ?>
                             <?php endif; ?>
-
                         </ul>
                     </div>
                 </div>
 
                 <!-- =============================== -->
-                <!--     SYARAT PENDAFTARAN          -->
+                <!--     SYARAT PENDAFTARAN         -->
                 <!-- =============================== -->
                 <div class="col-lg-6 mb-4">
                     <div class="card-info h-100">
                         <h2 class="section-title">Syarat Pendaftaran</h2>
                         <ul class="list-group list-group-flush">
-
                             <?php 
                                 if (empty(trim($syarat))) {
                                     echo '<li class="list-group-item">Syarat PPDB belum diisi admin.</li>';
@@ -125,27 +130,30 @@ $syarat = $data["syarat"] ?? "";
                                     foreach ($syarat_list as $s):
                             ?>
                                 <li class="list-group-item"><?= htmlspecialchars($s) ?></li>
-                            <?php 
-                                    endforeach;
-                                }
-                            ?>
-
+                            <?php endforeach; } ?>
                         </ul>
                     </div>
                 </div>
 
             </div>
 
-            <!-- Dropdown Aksi -->
+            <!-- =============================== -->
+            <!--         DROPDOWN AKSI           -->
+            <!-- =============================== -->
             <div class="text-center mt-5">
                 <div class="dropdown">
                     <button class="btn btn-primary btn-lg dropdown-toggle" data-bs-toggle="dropdown">
                         Pilih Aksi PPDB
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="pendaftaran.php">Daftar Sekarang</a></li>
-                        <li><a class="dropdown-item" href="status.php">Cek Status Pendaftaran</a></li>
-                        <li><a class="dropdown-item disabled">Panduan PPDB (Segera Hadir)</a></li>
+
+                        <!-- FITUR DAFTAR SEKARANG -->
+                        <li><a class="dropdown-item" href="#" onclick="daftarSekarang(event)">Daftar Sekarang</a></li>
+
+                        <!-- CEK STATUS -->
+                        <li><a class="dropdown-item" href="#" onclick="cekStatus(event)">Cek Status Pendaftaran</a></li>
+
+                        <li><a class="dropdown-item" href="panduan_pbdb.php">Panduan PPDB</a></li>
                     </ul>
                 </div>
             </div>
@@ -155,9 +163,79 @@ $syarat = $data["syarat"] ?? "";
 
 </main>
 
-<footer style="background:#e7f1ff;padding:20px;text-align:center">
-    &copy; 2025 TK Pertiwi
-</footer>
+<?php
+$footerPath = $_SERVER['DOCUMENT_ROOT'] . '/project-semester-3-/includes/footer.php';
+if (file_exists($footerPath)) {
+    include $footerPath;
+}
+?>
+
+<!-- ===================================== -->
+<!--   POPUP + CEK STATUS + DAFTAR SEKARANG -->
+<!-- ===================================== -->
+<script>
+// Ambil user_id dari PHP
+let userId = <?= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'null' ?>;
+
+// ============================
+//   FITUR DAFTAR SEKARANG
+// ============================
+function daftarSekarang(event) {
+    event.preventDefault();
+
+    if (userId === null) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Login Diperlukan',
+            text: 'Silakan login terlebih dahulu untuk melakukan pendaftaran.',
+            confirmButtonText: 'OK'
+        });
+        return;
+    }
+
+    window.location.href = 'pendaftaran.php';
+}
+
+// ============================
+//   FITUR CEK STATUS
+// ============================
+function cekStatus(event) {
+    event.preventDefault();
+
+    if (userId === null) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Anda Belum Login',
+            text: 'Silakan login terlebih dahulu.',
+            confirmButtonText: 'OK'
+        });
+        return;
+    }
+
+    fetch('cek_status_daftar.php')
+        .then(res => res.json())
+        .then(data => {
+
+            if (data.status === 'terdaftar') {
+                window.location.href = 'status.php';
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Belum Melakukan Pendaftaran',
+                    text: 'Silakan melakukan pendaftaran terlebih dahulu.',
+                    confirmButtonText: 'Mengerti'
+                });
+            }
+        })
+        .catch(err => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Terjadi Kesalahan',
+                text: 'Gagal mengecek status.',
+            });
+        });
+}
+</script>
 
 </body>
 </html>

@@ -7,14 +7,20 @@ error_reporting(E_ALL);
 
 include '../includes/config.php';
 
+// --- 0. Pastikan user login ---
+if (!isset($_SESSION['user_id'])) {
+    die("❌ Harus login terlebih dahulu.");
+}
+$user_id = $_SESSION['user_id'];
+
 // --- 1. Ambil data POST ---
 $pendaftar_id = $_POST['pendaftar_id'] ?? 0;
 $metode       = $_POST['metode'] ?? '';
 $status       = "dibayar"; // langsung LUNAS
 $tanggal      = date("Y-m-d H:i:s");
 
-// --- 2. Ambil nama_anak & nama_ortu dari tabel pendaftaran ---
-$stmt = $conn->prepare("SELECT nama_anak, nama_ortu FROM pendaftaran WHERE id = ?");
+// --- 2. Ambil data pendaftar dari tabel pendaftaran ---
+$stmt = $conn->prepare("SELECT nama_anak, nama_ortu, user_id FROM pendaftaran WHERE id = ?");
 $stmt->bind_param("i", $pendaftar_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -26,6 +32,8 @@ if ($result->num_rows === 0) {
 $data = $result->fetch_assoc();
 $nama_anak = $data['nama_anak'];
 $nama_ortu = $data['nama_ortu'];
+$user_id_pendaftar = $data['user_id']; // pastikan user_id pendaftar
+
 $stmt->close();
 
 // --- 3. Validasi file upload ---
@@ -83,9 +91,22 @@ if (!$update->execute()) {
 }
 $update->close();
 
-$conn->close();
+// --- 7. Tambahkan notifikasi pembayaran ---
+$message = "User '{$nama_ortu}' telah melakukan pembayaran untuk anak '{$nama_anak}'";
+$type = "pembayaran";
 
-// --- 7. Redirect ke status ---
+$stmt_notif = $conn->prepare("
+    INSERT INTO notifications (user_id, pendaftaran_id, message, type, created_at)
+    VALUES (?, ?, ?, ?, NOW())
+");
+$stmt_notif->bind_param("iiss", $user_id_pendaftar, $pendaftar_id, $message, $type);
+
+if (!$stmt_notif->execute()) {
+    die("❌ Gagal menambahkan notifikasi: " . $stmt_notif->error);
+}
+$stmt_notif->close();
+
+// --- 8. Redirect ke halaman status ---
 $_SESSION['pendaftaran_id'] = $pendaftar_id;
 header("Location: status.php?upload=berhasil");
 exit();

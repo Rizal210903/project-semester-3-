@@ -1,20 +1,43 @@
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"></script>
-    <script>
-    function showCategory(category) {
-        const items = document.querySelectorAll('.gallery-item');
-        items.forEach(item => {
-            item.style.display = 'none';
-            if (category === 'all' || item.classList.contains(category)) {
-                item.style.display = 'block';
-            }
-        });
+<footer class="footer text-center">
+    <div class="container py-4">
+        <h5 class="fw-bold mb-2">TK Pertiwi</h5>
+        <p class="mb-1">Jl. Kalimantan Alamat No. 123, Kabupaten Jember</p>
+        <p class="mb-3">Telp: 0812-3456-7890 | Email: tkpertiwi@example.com</p>
+
+        <div class="social-icons mb-3">
+            <a href="#" class="mx-2"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="mx-2"><i class="bi bi-instagram"></i></a>
+            <a href="#" class="mx-2"><i class="bi bi-youtube"></i></a>
+        </div>
+
+        <p class="mb-0">© <?php echo date('Y'); ?> TK Pertiwi — All Rights Reserved</p>
+    </div>
+</footer>
+
+<style>
+    .footer {
+        background-color: #000080 !important; /* Navy */
+        color: white !important;
+        width: 100%;
+        margin-top: 0;
     }
-    </script>
-    <footer class="bg-light text-center p-3 mt-5" style="background: #022230ff; color: #333;">
-        <p class="mb-0">&copy; 2025 TK Pertiwi. Semua hak cipta dilindungi.</p>
-    </footer>
-</body>
-</html>
+
+    .footer p,
+    .footer h5,
+    .footer a {
+        color: white !important;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .footer a:hover {
+        color: #FFD700 !important; /* Gold */
+        transition: 0.3s;
+    }
+
+    .social-icons i {
+        font-size: 1.3rem;
+    }
+</style>
+
+<!-- Bootstrap Icons CDN (jika belum ada) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
