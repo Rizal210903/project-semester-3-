@@ -6,8 +6,6 @@ if (!isset($_SESSION['admin_id'])) {
     die("Harus login sebagai admin!");
 }
 
-
-
 $stmt = $conn->prepare("
     SELECT n.id, n.message, n.type, n.created_at, p.nama_anak, p.nama_ortu, n.is_read
     FROM notifications n
@@ -18,6 +16,12 @@ $stmt->execute();
 $result = $stmt->get_result();
 $notifications = $result->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
+
+// Hitung total unread
+$unread_count = 0;
+foreach ($notifications as $n) {
+    if (($n['is_read'] ?? 1) == 0) $unread_count++;
+}
 ?>
 
 <!DOCTYPE html>
@@ -25,213 +29,694 @@ $stmt->close();
 
 <head>
     <meta charset="UTF-8">
-    <title>Notifikasi Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifikasi Admin - TK Pertiwi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            background: #f4f6fb;
+            background: #eaf6ff;
             font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            padding: 20px 0;
+            position: relative;
+            overflow-x: hidden;
         }
 
         .notif-container {
-            max-width: 900px;
-            margin: 40px auto;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header-section {
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            animation: slideDown 0.6s ease-out;
+            border: 2px solid #d6eaff;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .section-title {
-            font-size: 32px;
+            font-size: 2rem;
             font-weight: 700;
-            color: #2b2b2b;
-            text-align: center;
-            margin-bottom: 30px;
+            color: #007bff;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
 
-        /* ====== DESAIN BARU TOTAL ====== */
-        .notif-card {
+        .section-subtitle {
+            color: #666;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .stats-row {
             display: flex;
             gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            flex: 1;
+            min-width: 200px;
+            background: #007bff;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+            transition: transform 0.3s;
+            position: relative;
+        }
+
+        .stat-card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 5px;
+            height: 100%;
+            background-color: #0056b3;
+            border-radius: 10px 0 0 10px;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        /* Filter Tabs */
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 12px 25px;
+            border: none;
             background: #ffffff;
-            border-radius: 20px;
-            padding: 24px;
-            margin-bottom: 22px;
-            border: 1px solid #e0e6f0;
-            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.06);
-            transition: 0.25s ease-in-out;
+            color: #333;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            border: 2px solid #d6eaff;
+        }
+
+        .filter-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-color: #007bff;
+        }
+
+        .filter-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        /* Notification Cards */
+        .notif-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px solid #d6eaff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.5s ease-out;
+            animation-fill-mode: both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .notif-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 32px rgba(0, 0, 0, 0.12);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+            border-color: #007bff;
         }
 
-        /* UNREAD */
+        /* Unread Style */
         .notif-card.unread {
-            border-left: 8px solid #0d6efd !important;
-            background: #eaf2ff;
+            border-color: #007bff;
+            background: #eaf6ff;
         }
 
-        /* Icon */
+        .notif-card.unread::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: #007bff;
+        }
+
+        .unread-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #dc3545;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .notif-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
         .notif-icon {
             width: 60px;
             height: 60px;
-            border-radius: 16px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 30px;
-            font-weight: bold;
-            color: #fff;
             flex-shrink: 0;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .notif-card:hover .notif-icon {
+            transform: scale(1.05);
         }
 
         .icon-pendaftaran {
-            background: linear-gradient(135deg, #0d6efd, #5f9cff);
+            background: #007bff;
         }
 
         .icon-pembayaran {
-            background: linear-gradient(135deg, #198754, #62d48c);
+            background: #28a745;
         }
 
         .notif-content {
             flex: 1;
         }
 
-        .notif-content p {
-            margin: 0;
+        .notif-message {
             font-size: 1.1rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .notif-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .meta-item i {
+            color: #007bff;
+        }
+
+        .meta-value {
             font-weight: 600;
             color: #333;
         }
 
-        .notif-meta {
-            font-size: .9rem;
-            margin-top: 6px;
-            color: #666;
+        /* Tags */
+        .notif-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
         }
 
-        /* TAG */
         .notif-tag {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 6px 14px;
-            font-size: .8rem;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 0.8rem;
             font-weight: 700;
-            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .tag-pendaftaran {
             background: #e7f0ff;
-            color: #0d6efd;
+            color: #0056b3;
+            border: 1px solid #d6eaff;
         }
 
         .tag-pembayaran {
             background: #e9ffe9;
-            color: #198754;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
 
-        /* Waktu */
         .notif-time {
-            min-width: 130px;
-            font-size: .85rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem;
             color: #999;
-            text-align: right;
-            white-space: nowrap;
         }
 
-        @media (max-width: 576px) {
-            .notif-card {
-                flex-direction: column;
-            }
-
-            .notif-time {
-                text-align: left;
-            }
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
         }
 
-        /* Button */
-        #markAllReadBtn {
-            border-radius: 10px;
+        .btn-action {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 50px;
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0, 128, 0, 0.25);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
         }
 
-        #markAllReadBtn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(0, 128, 0, 0.35);
+        .btn-mark-all {
+            background: #007bff;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
         }
+
+        .btn-mark-all:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+            background: #0056b3;
+        }
+
+        .btn-clear-all {
+            background: #ffffff;
+            color: #dc3545;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
+            border: 2px solid #d6eaff;
+        }
+
+        .btn-clear-all:hover {
+            background: #dc3545;
+            color: white;
+            transform: translateY(-2px);
+            border-color: #dc3545;
+        }
+
+        /* Empty State */
+        .empty-state {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 60px 30px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 2px solid #d6eaff;
+        }
+
+        .empty-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.7;
+        }
+
+        .empty-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .empty-text {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .section-title {
+                font-size: 1.8rem;
+            }
+
+            .notif-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .notif-footer {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+
+            .stat-card {
+                min-width: 100%;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #e9ecef;
+            border-top-color: #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Stagger animation for cards */
+        .notif-card:nth-child(1) { animation-delay: 0.1s; }
+        .notif-card:nth-child(2) { animation-delay: 0.2s; }
+        .notif-card:nth-child(3) { animation-delay: 0.3s; }
+        .notif-card:nth-child(4) { animation-delay: 0.4s; }
+        .notif-card:nth-child(5) { animation-delay: 0.5s; }
     </style>
-
 </head>
 
 <body>
 
     <div class="notif-container">
 
-        <h2 class="section-title">📢 Notifikasi Admin</h2>
+        <!-- Header Section -->
+        <div class="header-section">
+            <h1 class="section-title">
+                <i class="bi bi-bell-fill"></i>
+                Notifikasi Admin
+            </h1>
+            <p class="section-subtitle">Kelola semua notifikasi pendaftaran dan pembayaran</p>
 
-        <div class="text-end mb-3">
-            <button id="markAllReadBtn" class="btn btn-success px-4">
-                ✔ Tandai Semua Sudah Dibaca
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-number"><?= count($notifications) ?></div>
+                    <div class="stat-label">Total Notifikasi</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number"><?= $unread_count ?></div>
+                    <div class="stat-label">Belum Dibaca</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button id="markAllReadBtn" class="btn-action btn-mark-all">
+                <i class="bi bi-check-all"></i>
+                Tandai Semua Sudah Dibaca
+            </button>
+            <button id="clearAllBtn" class="btn-action btn-clear-all">
+                <i class="bi bi-trash"></i>
+                Hapus Semua
             </button>
         </div>
 
-        <?php if (count($notifications) === 0): ?>
-            <div class="alert alert-info text-center">Belum ada notifikasi.</div>
-        <?php else: ?>
-            <?php foreach ($notifications as $notif): ?>
-                <?php $isUnread = ($notif['is_read'] ?? 1) == 0; ?>
+        <!-- Filter Tabs -->
+        <div class="filter-tabs">
+            <button class="filter-btn active" data-filter="all">
+                <i class="bi bi-grid-fill"></i> Semua
+            </button>
+            <button class="filter-btn" data-filter="pendaftaran">
+                <i class="bi bi-person-plus-fill"></i> Pendaftaran
+            </button>
+            <button class="filter-btn" data-filter="pembayaran">
+                <i class="bi bi-cash-coin"></i> Pembayaran
+            </button>
+            <button class="filter-btn" data-filter="unread">
+                <i class="bi bi-envelope-fill"></i> Belum Dibaca
+            </button>
+        </div>
 
-                <div class="notif-card <?= $isUnread ? 'unread' : '' ?>">
+        <!-- Loading -->
+        <div class="loading">
+            <div class="spinner"></div>
+            <p style="color: #666; margin-top: 15px;">Memuat notifikasi...</p>
+        </div>
 
-                    <div class="notif-icon <?= $notif['type'] === 'pendaftaran' ? 'icon-pendaftaran' : 'icon-pembayaran' ?>">
-                        <?= $notif['type'] === 'pendaftaran' ? '📘' : '💰' ?>
-                    </div>
+        <!-- Notifications List -->
+        <div id="notificationsList">
+            <?php if (count($notifications) === 0): ?>
+                <div class="empty-state">
+                    <div class="empty-icon">🔔</div>
+                    <h3 class="empty-title">Belum Ada Notifikasi</h3>
+                    <p class="empty-text">Notifikasi baru akan muncul di sini</p>
+                </div>
+            <?php else: ?>
+                <?php foreach ($notifications as $notif): ?>
+                    <?php 
+                        $isUnread = ($notif['is_read'] ?? 1) == 0;
+                        $type = $notif['type'];
+                        $iconClass = $type === 'pendaftaran' ? 'icon-pendaftaran' : 'icon-pembayaran';
+                        $tagClass = $type === 'pendaftaran' ? 'tag-pendaftaran' : 'tag-pembayaran';
+                        $icon = $type === 'pendaftaran' ? '📝' : '💳';
+                    ?>
 
-                    <div class="notif-content">
-                        <p><?= htmlspecialchars($notif['message'] ?? '(Tidak ada pesan)') ?></p>
+                    <div class="notif-card <?= $isUnread ? 'unread' : '' ?>" data-type="<?= $type ?>" data-read="<?= $isUnread ? '0' : '1' ?>">
+                        
+                        <?php if ($isUnread): ?>
+                            <span class="unread-badge">BARU</span>
+                        <?php endif; ?>
 
-                        <div class="notif-meta">
-                            Anak: <strong><?= htmlspecialchars($notif['nama_anak'] ?? '-') ?></strong> |
-                            Orang Tua: <strong><?= htmlspecialchars($notif['nama_ortu'] ?? '-') ?></strong>
+                        <div class="notif-header">
+                            <div class="notif-icon <?= $iconClass ?>">
+                                <?= $icon ?>
+                            </div>
+
+                            <div class="notif-content">
+                                <div class="notif-message">
+                                    <?= htmlspecialchars($notif['message'] ?? '(Tidak ada pesan)') ?>
+                                </div>
+
+                                <div class="notif-meta">
+                                    <div class="meta-item">
+                                        <i class="bi bi-person-fill"></i>
+                                        Anak: <span class="meta-value"><?= htmlspecialchars($notif['nama_anak'] ?? '-') ?></span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <i class="bi bi-people-fill"></i>
+                                        Orang Tua: <span class="meta-value"><?= htmlspecialchars($notif['nama_ortu'] ?? '-') ?></span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <span class="notif-tag <?= $notif['type'] === 'pendaftaran' ? 'tag-pendaftaran' : 'tag-pembayaran' ?>">
-                            <?= ucfirst($notif['type']) ?>
-                        </span>
+                        <div class="notif-footer">
+                            <span class="notif-tag <?= $tagClass ?>">
+                                <i class="bi bi-<?= $type === 'pendaftaran' ? 'person-plus' : 'cash' ?>"></i>
+                                <?= ucfirst($type) ?>
+                            </span>
+                            <div class="notif-time">
+                                <i class="bi bi-clock"></i>
+                                <?= date('d M Y, H:i', strtotime($notif['created_at'])) ?>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="notif-time">
-                        <?= date('d M Y H:i', strtotime($notif['created_at'])) ?>
-                    </div>
-                </div>
-
-            <?php endforeach; ?>
-        <?php endif; ?>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
     </div>
 
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.getElementById("markAllReadBtn").addEventListener("click", function () {
+        // Mark all as read
+        document.getElementById("markAllReadBtn").addEventListener("click", function() {
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i> Memproses...';
+
             fetch("notifications.php?mark_all_read=1")
                 .then(response => response.text())
                 .then(data => {
-                    // Hilangkan highlight kartu yang unread
+                    // Remove unread class and badge
                     document.querySelectorAll(".notif-card.unread").forEach(card => {
                         card.classList.remove("unread");
+                        const badge = card.querySelector(".unread-badge");
+                        if (badge) badge.remove();
                     });
 
-                    // Update badge notifikasi jadi nol
-                    let badge = document.getElementById("notifCount");
-                    if (badge) {
-                        badge.innerText = "0";
-                        badge.style.display = "none"; // sembunyikan badge
-                    }
-                })
-                .catch(error => console.error("Error:", error));
-        });
-    </script>
+                    // Update unread count
+                    document.querySelector(".stat-card:nth-child(2) .stat-number").textContent = "0";
 
+                    // Reset button
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-check-all"></i> Tandai Semua Sudah Dibaca';
+
+                    // Show success message
+                    showToast("Semua notifikasi telah ditandai sebagai dibaca", "success");
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-check-all"></i> Tandai Semua Sudah Dibaca';
+                    showToast("Terjadi kesalahan", "error");
+                });
+        });
+
+        // Clear all notifications
+        document.getElementById("clearAllBtn").addEventListener("click", function() {
+            if (confirm("Apakah Anda yakin ingin menghapus semua notifikasi?")) {
+                this.disabled = true;
+                this.innerHTML = '<i class="bi bi-hourglass-split"></i> Menghapus...';
+                
+                // Simulate delete (implement your own endpoint)
+                setTimeout(() => {
+                    document.getElementById("notificationsList").innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">🔔</div>
+                            <h3 class="empty-title">Belum Ada Notifikasi</h3>
+                            <p class="empty-text">Notifikasi baru akan muncul di sini</p>
+                        </div>
+                    `;
+                    
+                    document.querySelector(".stat-card:first-child .stat-number").textContent = "0";
+                    document.querySelector(".stat-card:nth-child(2) .stat-number").textContent = "0";
+                    
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-trash"></i> Hapus Semua';
+                    
+                    showToast("Semua notifikasi telah dihapus", "success");
+                }, 1000);
+            }
+        });
+
+        // Filter functionality
+        document.querySelectorAll(".filter-btn").forEach(btn => {
+            btn.addEventListener("click", function() {
+                // Update active state
+                document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+                this.classList.add("active");
+
+                const filter = this.dataset.filter;
+                const cards = document.querySelectorAll(".notif-card");
+
+                cards.forEach(card => {
+                    const type = card.dataset.type;
+                    const isUnread = card.dataset.read === "0";
+
+                    if (filter === "all") {
+                        card.style.display = "block";
+                    } else if (filter === "unread") {
+                        card.style.display = isUnread ? "block" : "none";
+                    } else {
+                        card.style.display = type === filter ? "block" : "none";
+                    }
+                });
+            });
+        });
+
+        // Toast notification
+        function showToast(message, type) {
+            const toast = document.createElement("div");
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                background: ${type === 'success' ? 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' : 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)'};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 50px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                z-index: 10000;
+                font-weight: 600;
+                animation: slideInRight 0.5s ease-out;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = "slideOutRight 0.5s ease-out";
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+    </script>
 
 </body>
 

@@ -275,6 +275,9 @@ if ($q_absen) {
         <button class="btn btn-success" onclick="simpanSemuaAbsen()">
             <i class="bi bi-save"></i> Simpan Absensi
         </button>
+        <button class="btn btn-info text-white" onclick="window.location.href='rekap_absen.php'">
+            <i class="bi bi-file-earmark-text"></i> Lihat Rekap Bulanan
+        </button>
     </div>
 
     <?php
@@ -322,11 +325,7 @@ if ($q_absen) {
         </div>
     </div>
 
-  
-
-   
-</main>
-
+    
 <!-- Modal Detail Absensi -->
 <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl">

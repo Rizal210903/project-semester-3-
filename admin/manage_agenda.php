@@ -164,9 +164,7 @@ $agenda = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="menu-toggle">&#9776;</div>
         <div class="title">KELOLA AGENDA</div>
         
-            <div><i class="bi bi-envelope"></i></div>
-            <div><i class="bi bi-bell"></i></div>
-            <div><i class="bi bi-person-circle"></i></div>
+           
         </div>
     </header>
 
