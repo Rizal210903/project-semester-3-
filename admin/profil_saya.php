@@ -64,53 +64,165 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
+<?php
+// Pastikan sudah ambil data profil admin
+// $admin['username'], $admin['email'], $admin['foto']
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Profil Admin</title>
+<title>Profil Saya</title>
+
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
-body { font-family: 'Poppins', sans-serif; background: #f5f6fa; }
-.profile-container { max-width: 500px; margin: 50px auto; background: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-.profile-img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 20px; }
+    body {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(180deg, #f9fcff 0%, #e7f1ff 100%);
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .profile-card {
+        width: 500px;
+        padding: 40px;
+        border-radius: 30px;
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border: 1.5px solid rgba(255, 255, 255, 0.55);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+        transition: .3s ease;
+    }
+
+    .profile-card:hover {
+        background: rgba(255, 255, 255, 0.32);
+        border: 1.5px solid rgba(255, 255, 255, 0.75);
+        transform: scale(1.015);
+    }
+
+    .profile-img {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid rgba(255,255,255,0.8);
+        margin-bottom: 20px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    .form-control {
+        padding-left: 45px;
+        height: 45px;
+        border-radius: 12px;
+        border: 1px solid #ccc;
+        font-size: 16px;
+        background: rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+
+    .form-control:focus {
+        border: 1px solid #0066ff;
+        background: rgba(255, 255, 255, 0.75);
+        box-shadow: 0 0 8px rgba(0, 110, 255, 0.3);
+    }
+
+    .icon-input {
+        position: absolute;
+        left: 15px;
+        top: 10px;
+        font-size: 20px;
+        color: #324b81;
+    }
+
+    .btn-save {
+        width: 100%;
+        height: 50px;
+        border-radius: 12px;
+        background: #005BBB;
+        color: white;
+        font-size: 18px;
+        font-weight: 600;
+        border: none;
+        transition: .25s ease;
+    }
+
+    .btn-save:hover {
+        background: #004099;
+        transform: scale(1.03);
+    }
+
+    .btn-back {
+        width: 100%;
+        height: 45px;
+        border-radius: 10px;
+        background: #cccccc;
+        font-weight: 600;
+        transition: .25s ease;
+    }
+
+    .btn-back:hover {
+        background: #b9b9b9;
+    }
+
 </style>
 </head>
+
 <body>
 
-<div class="profile-container text-center">
-    <h3 class="mb-4">Profil Admin</h3>
+<div class="profile-card text-center">
+    <h2 class="fw-bold mb-3" style="color:#003366;">Profil Saya</h2>
 
-    <?php if ($error): ?>
+    <?php if ($error ?? false): ?>
         <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
-    <?php elseif ($success): ?>
+    <?php elseif ($success ?? false): ?>
         <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
     <?php endif; ?>
 
-    <img src="<?= htmlspecialchars($admin['foto'] ?? 'https://via.placeholder.com/120') ?>" alt="Foto Admin" class="profile-img">
+    <img src="<?= htmlspecialchars($admin['foto'] ?? 'https://via.placeholder.com/120') ?>"
+         class="profile-img" alt="Foto Profil">
 
     <form method="POST" enctype="multipart/form-data">
-        <div class="mb-3 text-start">
-            <label class="form-label">Username</label>
-            <input type="text" name="username" class="form-control" value="<?= htmlspecialchars($admin['username'] ?? '') ?>" required>
+
+        <!-- USERNAME -->
+        <label class="fw-semibold">Username</label>
+        <div class="position-relative mb-3">
+            <i class="bi bi-person icon-input"></i>
+            <input type="text" name="username" class="form-control"
+                   value="<?= htmlspecialchars($admin['username']) ?>" required>
         </div>
 
-        <div class="mb-3 text-start">
-            <label class="form-label">Email</label>
-            <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($admin['email'] ?? '') ?>" required>
+        <!-- EMAIL -->
+        <label class="fw-semibold">Email</label>
+        <div class="position-relative mb-3">
+            <i class="bi bi-envelope icon-input"></i>
+            <input type="email" name="email" class="form-control"
+                   value="<?= htmlspecialchars($admin['email']) ?>" required>
         </div>
 
-        <div class="mb-3 text-start">
-            <label class="form-label">Foto Profil</label>
+        <!-- FOTO -->
+        <label class="fw-semibold">Foto Profil Baru</label>
+        <div class="position-relative mb-3">
+            <i class="bi bi-image icon-input"></i>
             <input type="file" name="foto" class="form-control" accept="image/*">
-            <small class="text-muted">Kosongkan jika tidak ingin mengganti foto</small>
         </div>
 
-        <button type="submit" class="btn btn-primary w-100">Simpan Perubahan</button>
+        <button type="submit" class="btn-save mt-2">Simpan Perubahan</button>
+
+        <button type="button" onclick="window.location.href='admin_dashboard.php'" 
+                class="btn btn-back mt-3">Kembali</button>
+
     </form>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+

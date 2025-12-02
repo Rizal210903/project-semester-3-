@@ -218,9 +218,8 @@ while ($row = $stmt_chart->fetch(PDO::FETCH_ASSOC)) {
                 <a href="#" class="text-dark" id="notifDropdown" data-bs-toggle="dropdown">
                     <i class="bi bi-bell fs-4 text-white"></i>
                     <?php if ($jumlah_notif > 0): ?>
-                        <span class="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill">
-                            <?= $jumlah_notif ?>
-                        </span>
+                        <span id="notifCount" class="badge bg-danger"><?= $jumlah_notif ?></span>
+
                     <?php endif; ?>
                 </a>
 
