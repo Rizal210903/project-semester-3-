@@ -2,51 +2,9 @@
 session_start();
 include '../includes/config.php';
 
-// Cek dan buat tabel absensi_guru jika belum ada
-$check_table = $conn->query("SHOW TABLES LIKE 'absensi_guru'");
-if ($check_table->num_rows == 0) {
-    $create_table = "CREATE TABLE `absensi_guru` (
-      `id` int(11) NOT NULL AUTO_INCREMENT,
-      `guru_id` int(11) NOT NULL,
-      `tanggal` date NOT NULL,
-      `status` enum('Hadir','Izin','Sakit','Alfa','Terlambat') NOT NULL,
-      `waktu_absen` time DEFAULT NULL,
-      `catatan` text,
-      `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      `updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-      PRIMARY KEY (`id`),
-      UNIQUE KEY `guru_tanggal` (`guru_id`,`tanggal`),
-      KEY `guru_id` (`guru_id`),
-      KEY `tanggal` (`tanggal`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-    
-    $conn->query($create_table);
-} else {
-    // Cek dan tambah kolom waktu_absen jika belum ada
-    $check_column = $conn->query("SHOW COLUMNS FROM absensi_guru LIKE 'waktu_absen'");
-    if ($check_column->num_rows == 0) {
-        $conn->query("ALTER TABLE absensi_guru ADD COLUMN waktu_absen time DEFAULT NULL AFTER status");
-    }
-    
-    // Update enum status untuk menambah Terlambat
-    $conn->query("ALTER TABLE absensi_guru MODIFY status enum('Hadir','Izin','Sakit','Alfa','Terlambat') NOT NULL");
-}
-
-// Ambil tanggal hari ini atau dari parameter
-$tanggal = isset($_GET['tanggal']) ? $_GET['tanggal'] : date('Y-m-d');
-
 // Ambil data guru dari database
-$q = $conn->query("SELECT * FROM guru ORDER BY nama ASC");
+$q = $conn->query("SELECT * FROM guru ORDER BY fullname ASC");
 $teachers = $q->fetch_all(MYSQLI_ASSOC);
-
-// Ambil data absensi untuk tanggal tertentu
-$absensi_data = [];
-$q_absen = $conn->query("SELECT * FROM absensi_guru WHERE tanggal = '$tanggal'");
-if ($q_absen) {
-    while ($row = $q_absen->fetch_assoc()) {
-        $absensi_data[$row['guru_id']] = $row;
-    }
-}
 ?>
 
 <!DOCTYPE html>
@@ -54,7 +12,7 @@ if ($q_absen) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kelola Absen Guru - TK Pertiwi</title>
+    <title>Rekap Absensi Guru - TK Pertiwi</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -84,174 +42,377 @@ if ($q_absen) {
             transition: 0.3s; 
         }
         .main-content.collapsed { margin-left: 60px; }
-        
-        .date-filter {
-            background: #fff;
-            padding: 20px;
-            border-radius: 12px;
-            border: 2px solid #d6eaff;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .teacher-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
-            gap: 20px; 
-            margin-bottom: 30px;
-        }
-        .teacher-card {
-            background-color: #fff; 
-            border: 2px solid #d6eaff;
-            border-radius: 10px; 
-            padding: 15px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1); 
-            transition: 0.3s;
-        }
-        .teacher-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-        }
-        .teacher-header img {
-            width: 50px; 
-            height: 50px; 
-            border-radius: 50%; 
-            object-fit: cover;
-            margin-right: 10px;
-        }
-        .teacher-header { 
-            display: flex; 
-            align-items: center; 
-            margin-bottom: 12px; 
-        }
-        
-        .status-options { 
-            display: flex; 
-            gap: 8px; 
-            margin-top: 10px; 
-            flex-wrap: wrap; 
-        }
-        .status-options label {
-            cursor: pointer;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 12px;
-            transition: 0.2s;
-            border: 1px solid #ddd;
-        }
-        .status-options label:has(input:checked) {
-            background-color: #007bff;
+
+        /* Page Header */
+        .page-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            padding: 30px;
+            border-radius: 15px;
             color: white;
-            border-color: #007bff;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0, 123, 255, 0.4);
         }
-        .status-options input[type="radio"] {
-            margin-right: 3px;
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
         }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-bottom: 8px;
+
+        .page-header p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 14px;
         }
-        .status-hadir { background-color: #d4edda; color: #155724; }
-        .status-terlambat { background-color: #fff3cd; color: #856404; }
-        .status-izin { background-color: #cfe2ff; color: #084298; }
-        .status-sakit { background-color: #f8d7da; color: #721c24; }
-        .status-alfa { background-color: #d6d8db; color: #383d41; }
-        
-        .waktu-info {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 11px;
-            color: #666;
-            margin-top: 5px;
-            background: #f8f9fa;
-            padding: 4px 8px;
-            border-radius: 5px;
-        }
-        
-        .catatan-display {
-            background-color: #f8f9fa;
-            padding: 8px;
-            border-radius: 5px;
-            font-size: 12px;
-            margin-top: 8px;
-            color: #666;
-        }
-        
-        .izin-box {
-            background: #fff;
+
+        /* Filter Section */
+        .filter-container {
+            background: white;
             padding: 25px;
             border-radius: 12px;
             border: 2px solid #d6eaff;
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            margin-top: 50px;
-        }
-        
-        .summary-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 15px;
             margin-bottom: 30px;
         }
-        .summary-card {
+
+        .filter-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #007bff;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .filter-item {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        /* Stats Cards */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
             background: white;
-            padding: 20px;
-            border-radius: 10px;
+            padding: 25px;
+            border-radius: 12px;
             border: 2px solid #d6eaff;
             text-align: center;
             transition: all 0.3s;
+            cursor: default;
         }
-        .summary-card:hover {
+
+        .stat-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
             border-color: #007bff;
         }
-        .summary-number {
-            font-size: 32px;
-            font-weight: bold;
-            color: #007bff;
+
+        .stat-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
         }
-        .summary-label {
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
             font-size: 13px;
             color: #666;
-            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        
-        .waktu-badge {
-            background: #e7f3ff;
-            color: #0056b3;
-            padding: 2px 8px;
+
+        .stat-hadir { color: #28a745; }
+        .stat-terlambat { color: #ffc107; }
+        .stat-izin { color: #0d6efd; }
+        .stat-sakit { color: #dc3545; }
+        .stat-alfa { color: #6c757d; }
+
+        /* Rekap Table */
+        .rekap-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid #d6eaff;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .rekap-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .rekap-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
             border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+
+        .rekap-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            min-width: 1200px;
+        }
+
+        .rekap-table th,
+        .rekap-table td {
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .rekap-table thead th {
+            background: #007bff;
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .rekap-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .rekap-table tbody tr:hover {
+            background-color: #e7f3ff;
+        }
+
+        .nama-guru-col {
+            text-align: left;
+            font-weight: 600;
+            min-width: 200px;
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 5;
+        }
+
+        .nama-guru-col:hover {
+            background: #e7f3ff;
+        }
+
+        .nama-guru-header {
+            position: sticky;
+            left: 0;
+            z-index: 15 !important;
+        }
+
+        .status-cell {
             font-size: 11px;
             font-weight: 600;
+            width: 40px;
         }
-        
-        .late-indicator {
-            background: #fff3cd;
-            color: #856404;
-            padding: 2px 8px;
+
+        .hadir { background-color: #d4edda; color: #155724; }
+        .terlambat { background-color: #fff3cd; color: #856404; }
+        .izin { background-color: #cfe2ff; color: #084298; }
+        .sakit { background-color: #f8d7da; color: #721c24; }
+        .alfa { background-color: #d6d8db; color: #383d41; }
+        .kosong { background-color: #f8f9fa; color: #999; }
+
+        .summary-col {
+            background-color: #e7f3ff;
+            font-weight: 700;
+            min-width: 60px;
+        }
+
+        .weekend {
+            background-color: #ffe5e5 !important;
+        }
+
+        .today {
+            background-color: #fff9c4 !important;
+            font-weight: bold;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8f9fa;
             border-radius: 10px;
-            font-size: 10px;
-            margin-left: 5px;
+            border: 1px solid #dee2e6;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .legend-color {
+            width: 35px;
+            height: 25px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            display: none;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 80px;
+            opacity: 0.3;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h4 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 90px 15px 30px;
+            }
+            
+            .filter-row {
+                flex-direction: column;
+            }
+            
+            .filter-item {
+                width: 100%;
+            }
+            
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .action-buttons {
+                width: 100%;
+            }
+            
+            .action-buttons button {
+                flex: 1;
+            }
+        }
+
+        @media print {
+            .header, .filter-container, .action-buttons, .menu-toggle {
+                display: none !important;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 20px;
+            }
+            
+            .rekap-container {
+                box-shadow: none;
+                border: 1px solid #000;
+            }
+            
+            .page-header {
+                background: #333 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
     </style>
 </head>
 
 <body>
 
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+        <div class="spinner"></div>
+        <p>Memuat data rekap absensi...</p>
+    </div>
+</div>
+
 <!-- Header -->
 <header class="header">
     <div class="menu-toggle">&#9776;</div>
-    <div class="title">DATA ABSEN GURU</div>
+    <div class="title">REKAP ABSENSI GURU</div>
 </header>
 
 <!-- Sidebar -->
@@ -260,120 +421,157 @@ if ($q_absen) {
 <!-- Main Content -->
 <main class="main-content">
 
-    <h1 class="mb-4">Data Absen Guru</h1>
-
-    <!-- Filter Tanggal -->
-    <div class="date-filter">
-        <i class="bi bi-calendar3 fs-4 text-primary"></i>
-        <div>
-            <label class="form-label mb-1 fw-bold">Pilih Tanggal</label>
-            <input type="date" id="tanggalFilter" class="form-control" value="<?= $tanggal; ?>">
-        </div>
-        <button class="btn btn-primary" onclick="filterByDate()">
-            <i class="bi bi-search"></i> Tampilkan
-        </button>
-        <button class="btn btn-success" onclick="simpanSemuaAbsen()">
-            <i class="bi bi-save"></i> Simpan Absensi
-        </button>
-        <button class="btn btn-info text-white" onclick="window.location.href='rekap_absen.php'">
-            <i class="bi bi-file-earmark-text"></i> Lihat Rekap Bulanan
-        </button>
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1><i class="bi bi-calendar2-month"></i> Rekap Absensi Guru</h1>
+        <p>Laporan lengkap kehadiran guru per bulan</p>
     </div>
 
-    <?php
-    // Hitung ringkasan absensi
-    $hadir = 0; $izin = 0; $sakit = 0; $alfa = 0; $belum = 0; $terlambat = 0;
-    foreach ($teachers as $t) {
-        if (isset($absensi_data[$t['id']])) {
-            $status = $absensi_data[$t['id']]['status'];
-            if ($status == 'Hadir') $hadir++;
-            elseif ($status == 'Izin') $izin++;
-            elseif ($status == 'Sakit') $sakit++;
-            elseif ($status == 'Alfa') $alfa++;
-            elseif ($status == 'Terlambat') $terlambat++;
-        } else {
-            $belum++;
-        }
-    }
-    ?>
-
-    <!-- Ringkasan -->
-    <div class="summary-cards">
-        <div class="summary-card" onclick="showDetailModal('Hadir')" style="cursor: pointer;" title="Klik untuk melihat detail">
-            <div class="summary-number" style="color: #28a745;"><?= $hadir; ?></div>
-            <div class="summary-label">Hadir</div>
+    <!-- Filter Section -->
+    <div class="filter-container">
+        <div class="filter-title">
+            <i class="bi bi-funnel-fill"></i>
+            Filter Periode
         </div>
-        <div class="summary-card" onclick="showDetailModal('Terlambat')" style="cursor: pointer;" title="Klik untuk melihat detail">
-            <div class="summary-number" style="color: #ffc107;"><?= $terlambat; ?></div>
-            <div class="summary-label">Terlambat</div>
-        </div>
-        <div class="summary-card" onclick="showDetailModal('Izin')" style="cursor: pointer;" title="Klik untuk melihat detail">
-            <div class="summary-number" style="color: #0d6efd;"><?= $izin; ?></div>
-            <div class="summary-label">Izin</div>
-        </div>
-        <div class="summary-card" onclick="showDetailModal('Sakit')" style="cursor: pointer;" title="Klik untuk melihat detail">
-            <div class="summary-number" style="color: #dc3545;"><?= $sakit; ?></div>
-            <div class="summary-label">Sakit</div>
-        </div>
-        <div class="summary-card" onclick="showDetailModal('Alfa')" style="cursor: pointer;" title="Klik untuk melihat detail">
-            <div class="summary-number" style="color: #6c757d;"><?= $alfa; ?></div>
-            <div class="summary-label">Alfa</div>
-        </div>
-        <div class="summary-card" onclick="showDetailModal('Belum')" style="cursor: pointer;" title="Klik untuk melihat detail">
-            <div class="summary-number" style="color: #17a2b8;"><?= $belum; ?></div>
-            <div class="summary-label">Belum Absen</div>
-        </div>
-    </div>
-
-    
-<!-- Modal Detail Absensi -->
-<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="modalTitle">Detail Absensi</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="filter-row">
+            <div class="filter-item">
+                <label class="form-label mb-1 fw-bold">Bulan</label>
+                <select id="bulanRekap" class="form-select">
+                    <?php 
+                    $nama_bulan = [
+                        '01'=>'Januari', '02'=>'Februari', '03'=>'Maret', '04'=>'April',
+                        '05'=>'Mei', '06'=>'Juni', '07'=>'Juli', '08'=>'Agustus',
+                        '09'=>'September', '10'=>'Oktober', '11'=>'November', '12'=>'Desember'
+                    ];
+                    foreach ($nama_bulan as $key => $value): 
+                    ?>
+                        <option value="<?= $key ?>" <?= date('m') == $key ? 'selected' : '' ?>><?= $value ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
-            <div class="modal-body">
-                <div class="alert alert-info mb-3">
-                    <i class="bi bi-calendar-check"></i> 
-                    <strong>Tanggal:</strong> <span id="modalTanggal"></span>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-primary">
-                            <tr>
-                                <th width="50">No</th>
-                                <th width="70">Foto</th>
-                                <th>Nama Guru</th>
-                                <th>Jabatan</th>
-                                <th width="120">Waktu Absen</th>
-                                <th width="120">Waktu Input</th>
-                                <th>Catatan</th>
-                            </tr>
-                        </thead>
-                        <tbody id="modalTableBody">
-                            <!-- Data akan diisi oleh JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-                <div id="emptyMessage" class="text-center text-muted py-5" style="display: none;">
-                    <i class="bi bi-inbox" style="font-size: 64px; opacity: 0.3;"></i>
-                    <p class="mt-3 fs-5">Tidak ada data untuk ditampilkan</p>
-                </div>
+            <div class="filter-item">
+                <label class="form-label mb-1 fw-bold">Tahun</label>
+                <select id="tahunRekap" class="form-select">
+                    <?php for ($y = date('Y'); $y >= 2020; $y--): ?>
+                        <option value="<?= $y ?>" <?= date('Y') == $y ? 'selected' : '' ?>><?= $y ?></option>
+                    <?php endfor; ?>
+                </select>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle"></i> Tutup
+            <div class="filter-item" style="flex: 0 0 auto;">
+                <button class="btn btn-primary btn-lg" onclick="loadRekap()">
+                    <i class="bi bi-search"></i> Tampilkan
                 </button>
             </div>
         </div>
     </div>
-</div>
+
+    <!-- Stats Cards -->
+    <div class="stats-container" id="statsContainer">
+        <div class="stat-card">
+            <div class="stat-icon stat-hadir">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div class="stat-number stat-hadir" id="statHadir">0</div>
+            <div class="stat-label">Total Hadir</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-terlambat">
+                <i class="bi bi-clock-fill"></i>
+            </div>
+            <div class="stat-number stat-terlambat" id="statTerlambat">0</div>
+            <div class="stat-label">Total Terlambat</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-izin">
+                <i class="bi bi-file-text-fill"></i>
+            </div>
+            <div class="stat-number stat-izin" id="statIzin">0</div>
+            <div class="stat-label">Total Izin</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-sakit">
+                <i class="bi bi-hospital-fill"></i>
+            </div>
+            <div class="stat-number stat-sakit" id="statSakit">0</div>
+            <div class="stat-label">Total Sakit</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-alfa">
+                <i class="bi bi-x-circle-fill"></i>
+            </div>
+            <div class="stat-number stat-alfa" id="statAlfa">0</div>
+            <div class="stat-label">Total Alfa</div>
+        </div>
+    </div>
+
+    <!-- Rekap Table -->
+    <div class="rekap-container">
+        <div class="rekap-header">
+            <div class="rekap-title">
+                <i class="bi bi-table"></i>
+                <span id="periodTitle">Rekap Bulan <?= $nama_bulan[date('m')] ?> <?= date('Y') ?></span>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-success" onclick="exportToExcel()">
+                    <i class="bi bi-file-excel"></i> Export Excel
+                </button>
+                <button class="btn btn-info text-white" onclick="window.print()">
+                    <i class="bi bi-printer"></i> Cetak
+                </button>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color hadir">H</div>
+                <span>Hadir</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color terlambat">T</div>
+                <span>Terlambat</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color izin">I</div>
+                <span>Izin</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color sakit">S</div>
+                <span>Sakit</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color alfa">A</div>
+                <span>Alfa</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color kosong">-</div>
+                <span>Tidak Ada Data</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color weekend" style="width: 35px; height: 25px;"></div>
+                <span>Akhir Pekan</span>
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="table-wrapper">
+            <div id="rekapTableContainer">
+                <div class="empty-state">
+                    <i class="bi bi-calendar2-month"></i>
+                    <h4>Silakan pilih periode dan klik Tampilkan</h4>
+                    <p>Data rekap absensi akan ditampilkan di sini</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
+    // Sidebar Toggle
     const menuToggle = document.querySelector('.menu-toggle');
     const sidebar = document.querySelector('.sidebar');
     const mainContent = document.querySelector('.main-content');
@@ -383,156 +581,204 @@ if ($q_absen) {
         mainContent.classList.toggle('collapsed');
     });
 
-    function filterByDate() {
-        const tanggal = document.getElementById('tanggalFilter').value;
-        window.location.href = '?tanggal=' + tanggal;
-    }
+    // Load rekap saat halaman dimuat
+    window.addEventListener('load', function() {
+        loadRekap();
+    });
 
-    // Data guru untuk modal (dari PHP)
-    const teachersData = <?= json_encode($teachers); ?>;
-    const absensiData = <?= json_encode($absensi_data); ?>;
-    const currentDate = '<?= $tanggal; ?>';
-
-    function showDetailModal(status) {
-        const modalTitle = document.getElementById('modalTitle');
-        const modalTanggal = document.getElementById('modalTanggal');
-        const modalTableBody = document.getElementById('modalTableBody');
-        const emptyMessage = document.getElementById('emptyMessage');
+    // Load Rekap Data
+    function loadRekap() {
+        const bulan = document.getElementById('bulanRekap').value;
+        const tahun = document.getElementById('tahunRekap').value;
+        const loading = document.getElementById('loadingOverlay');
+        const container = document.getElementById('rekapTableContainer');
         
-        // Set title dan tanggal
-        modalTitle.innerHTML = `<i class="bi bi-people-fill"></i> Detail Guru ${status}`;
-        modalTanggal.textContent = formatDate(currentDate);
+        loading.style.display = 'flex';
         
-        // Filter guru berdasarkan status
-        let filteredTeachers = [];
-        
-        if (status === 'Belum') {
-            // Guru yang belum absen
-            filteredTeachers = teachersData.filter(teacher => !absensiData[teacher.id]);
-        } else {
-            // Guru dengan status tertentu
-            filteredTeachers = teachersData.filter(teacher => {
-                return absensiData[teacher.id] && absensiData[teacher.id].status === status;
-            });
-        }
-        
-        // Tampilkan data atau pesan kosong
-        if (filteredTeachers.length === 0) {
-            modalTableBody.innerHTML = '';
-            emptyMessage.style.display = 'block';
-        } else {
-            emptyMessage.style.display = 'none';
-            let html = '';
-            
-            filteredTeachers.forEach((teacher, index) => {
-                const absen = absensiData[teacher.id];
-                const catatan = absen ? (absen.catatan || '-') : '-';
-                const foto = teacher.profile_image_url || 'default.png';
-                const waktuAbsen = absen && absen.waktu_absen ? formatTime(absen.waktu_absen) : '-';
-                const waktuInput = absen && absen.created_at ? formatDateTime(absen.created_at) : '-';
-                
-                // Tentukan class untuk waktu terlambat
-                let waktuClass = '';
-                if (absen && absen.waktu_absen && absen.status === 'Terlambat') {
-                    waktuClass = 'text-warning fw-bold';
-                }
-                
-                html += `
-                    <tr>
-                        <td class="text-center">${index + 1}</td>
-                        <td class="text-center">
-                            <img src="${foto}" alt="${teacher.nama}" 
-                                 style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #007bff;">
-                        </td>
-                        <td><strong>${teacher.nama}</strong></td>
-                        <td>${teacher.jabatan}</td>
-                        <td class="text-center ${waktuClass}">
-                            ${waktuAbsen !== '-' ? '<i class="bi bi-clock-fill"></i> ' + waktuAbsen : '-'}
-                        </td>
-                        <td class="text-center" style="font-size: 11px;">
-                            ${waktuInput}
-                        </td>
-                        <td>${catatan}</td>
-                    </tr>
-                `;
-            });
-            
-            modalTableBody.innerHTML = html;
-        }
-        
-        // Tampilkan modal
-        const modal = new bootstrap.Modal(document.getElementById('detailModal'));
-        modal.show();
-    }
-
-    function formatDate(dateString) {
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        const date = new Date(dateString);
-        return date.toLocaleDateString('id-ID', options);
-    }
-
-    function formatTime(timeString) {
-        if (!timeString || timeString === '-') return '-';
-        const [hour, minute] = timeString.split(':');
-        return `${hour}:${minute}`;
-    }
-
-    function formatDateTime(datetimeString) {
-        if (!datetimeString) return '-';
-        const date = new Date(datetimeString);
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        const hour = String(date.getHours()).padStart(2, '0');
-        const minute = String(date.getMinutes()).padStart(2, '0');
-        return `${day}/${month}/${year} ${hour}:${minute}`;
-    }
-
-    function simpanSemuaAbsen() {
-        const tanggal = document.getElementById('tanggalFilter').value;
-        const absensiData = [];
-
-        document.querySelectorAll('.teacher-card').forEach(card => {
-            const guruId = card.dataset.guruId;
-            const statusRadio = card.querySelector(`input[name="status_${guruId}"]:checked`);
-            const catatan = card.querySelector(`input[name="catatan_${guruId}"]`).value;
-            const waktu = card.querySelector(`input[name="waktu_${guruId}"]`).value;
-
-            if (statusRadio) {
-                absensiData.push({
-                    guru_id: guruId,
-                    tanggal: tanggal,
-                    status: statusRadio.value,
-                    waktu_absen: waktu || null,
-                    catatan: catatan
-                });
-            }
-        });
-
-        if (absensiData.length === 0) {
-            alert('Tidak ada data absensi yang diisi!');
-            return;
-        }
-
-        // Kirim data menggunakan AJAX
         $.ajax({
-            url: 'simpan_absen_batch.php',
-            method: 'POST',
-            data: {
-                absensi: JSON.stringify(absensiData)
-            },
+            url: 'get_rekap_absen.php',
+            method: 'GET',
+            data: { bulan: bulan, tahun: tahun },
+            dataType: 'json',
             success: function(response) {
-                alert('Absensi berhasil disimpan!');
-                location.reload();
+                loading.style.display = 'none';
+                
+                if (response.status === 'success') {
+                    // Update stats
+                    updateStats(response.stats);
+                    
+                    // Update period title
+                    const namaBulan = document.getElementById('bulanRekap').options[document.getElementById('bulanRekap').selectedIndex].text;
+                    document.getElementById('periodTitle').textContent = `Rekap Bulan ${namaBulan} ${tahun}`;
+                    
+                    // Generate table
+                    container.innerHTML = generateTableHTML(response.data, bulan, tahun);
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <h4>Data Tidak Ditemukan</h4>
+                            <p>${response.message}</p>
+                        </div>
+                    `;
+                }
             },
             error: function() {
-                alert('Terjadi kesalahan saat menyimpan absensi');
+                loading.style.display = 'none';
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-x-circle"></i>
+                        <h4>Gagal Memuat Data</h4>
+                        <p>Terjadi kesalahan saat mengambil data rekap</p>
+                    </div>
+                `;
             }
         });
     }
 
-    // Auto-reload saat tanggal berubah
-    document.getElementById('tanggalFilter').addEventListener('change', filterByDate);
+    // Update Statistics
+    function updateStats(stats) {
+        document.getElementById('statHadir').textContent = stats.hadir || 0;
+        document.getElementById('statTerlambat').textContent = stats.terlambat || 0;
+        document.getElementById('statIzin').textContent = stats.izin || 0;
+        document.getElementById('statSakit').textContent = stats.sakit || 0;
+        document.getElementById('statAlfa').textContent = stats.alfa || 0;
+    }
+
+    // Generate Table HTML
+    function generateTableHTML(data, bulan, tahun) {
+        const jumlahHari = new Date(tahun, bulan, 0).getDate();
+        const today = new Date().toISOString().split('T')[0];
+        
+        let html = '<table class="rekap-table" id="rekapTableExport"><thead><tr>';
+        html += '<th class="nama-guru-header" rowspan="2">Nama Guru</th>';
+        html += `<th colspan="${jumlahHari}">Tanggal</th>`;
+        html += '<th colspan="5">Jumlah</th></tr><tr>';
+        
+        // Header tanggal dengan marker hari ini dan weekend
+        for (let i = 1; i <= jumlahHari; i++) {
+            const date = `${tahun}-${bulan}-${String(i).padStart(2, '0')}`;
+            const dayOfWeek = new Date(date).getDay();
+            const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+            const isToday = (date === today);
+            
+            let cssClass = '';
+            let icon = '';
+            
+            if (isToday) {
+                cssClass = 'today';
+                icon = ' ⭐';
+            } else if (isWeekend) {
+                cssClass = 'weekend';
+            }
+            
+            html += `<th class="${cssClass}" title="${getDayName(dayOfWeek)}">${i}${icon}</th>`;
+        }
+        
+        // Header summary
+        html += '<th class="summary-col">H</th>';
+        html += '<th class="summary-col">T</th>';
+        html += '<th class="summary-col">I</th>';
+        html += '<th class="summary-col">S</th>';
+        html += '<th class="summary-col">A</th>';
+        html += '</tr></thead><tbody>';
+        
+        // Data guru
+        if (data.length === 0) {
+            html += '<tr><td colspan="' + (jumlahHari + 6) + '" class="text-center py-4">Tidak ada data guru</td></tr>';
+        } else {
+            data.forEach(guru => {
+                html += '<tr>';
+                html += `<td class="nama-guru-col">${guru.fullname}</td>`;
+                
+                // Status per hari
+                for (let i = 1; i <= jumlahHari; i++) {
+                    const tanggal = `${tahun}-${bulan}-${String(i).padStart(2, '0')}`;
+                    const dayOfWeek = new Date(tanggal).getDay();
+                    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                    const isToday = (tanggal === today);
+                    
+                    const absen = guru.absensi[tanggal];
+                    let label = '-';
+                    let cssClass = 'kosong';
+                    let title = 'Tidak ada data';
+                    
+                    if (absen) {
+                        switch(absen.status) {
+                            case 'Hadir': 
+                                label = 'H'; 
+                                cssClass = 'hadir'; 
+                                title = 'Hadir';
+                                break;
+                            case 'Terlambat': 
+                                label = 'T'; 
+                                cssClass = 'terlambat'; 
+                                title = 'Terlambat';
+                                break;
+                            case 'Izin': 
+                                label = 'I'; 
+                                cssClass = 'izin'; 
+                                title = 'Izin';
+                                break;
+                            case 'Sakit': 
+                                label = 'S'; 
+                                cssClass = 'sakit'; 
+                                title = 'Sakit';
+                                break;
+                            case 'Alfa': 
+                                label = 'A'; 
+                                cssClass = 'alfa'; 
+                                title = 'Alfa';
+                                break;
+                        }
+                        
+                        if (absen.waktu_absen) {
+                            title += ' (' + absen.waktu_absen.substring(0,5) + ')';
+                        }
+                        
+                        if (absen.catatan) {
+                            title += ' - ' + absen.catatan;
+                        }
+                    }
+                    
+                    const bgClass = isToday ? 'today' : (isWeekend ? 'weekend' : '');
+                    html += `<td class="status-cell ${cssClass} ${bgClass}" title="${title}">${label}</td>`;
+                }
+                
+                // Jumlah per status
+                html += `<td class="summary-col">${guru.summary.hadir}</td>`;
+                html += `<td class="summary-col">${guru.summary.terlambat}</td>`;
+                html += `<td class="summary-col">${guru.summary.izin}</td>`;
+                html += `<td class="summary-col">${guru.summary.sakit}</td>`;
+                html += `<td class="summary-col">${guru.summary.alfa}</td>`;
+                html += '</tr>';
+            });
+        }
+        
+        html += '</tbody></table>';
+        return html;
+    }
+
+    // Get Day Name
+    function getDayName(dayIndex) {
+        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        return days[dayIndex];
+    }
+
+    // Export to Excel
+    function exportToExcel() {
+        const table = document.getElementById('rekapTableExport');
+        if (!table) {
+            alert('Tidak ada data untuk diexport');
+            return;
+        }
+        
+        const bulan = document.getElementById('bulanRekap').options[document.getElementById('bulanRekap').selectedIndex].text;
+        const tahun = document.getElementById('tahunRekap').value;
+        
+        const wb = XLSX.utils.table_to_book(table, {sheet: "Rekap Absensi"});
+        XLSX.writeFile(wb, `Rekap_Absensi_Guru_${bulan}_${tahun}.xlsx`);
+    }
 </script>
 
 </body>
