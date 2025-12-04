@@ -1,113 +1,149 @@
 <?php
 session_start();
+require_once '../includes/config.php';
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-include '../includes/config.php';
-
-// --- 0. Pastikan user login ---
+// Cek login
 if (!isset($_SESSION['user_id'])) {
-    die("❌ Harus login terlebih dahulu.");
-}
-$user_id = $_SESSION['user_id'];
-
-// --- 1. Ambil data POST ---
-$pendaftar_id = $_POST['pendaftar_id'] ?? 0;
-$metode       = $_POST['metode'] ?? '';
-$status       = "dibayar"; // langsung LUNAS
-$tanggal      = date("Y-m-d H:i:s");
-
-// --- 2. Ambil data pendaftar dari tabel pendaftaran ---
-$stmt = $conn->prepare("SELECT nama_anak, nama_ortu, user_id FROM pendaftaran WHERE id = ?");
-$stmt->bind_param("i", $pendaftar_id);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows === 0) {
-    die("❌ ID pendaftaran tidak ditemukan!");
+    header("Location: ../login.php");
+    exit;
 }
 
-$data = $result->fetch_assoc();
-$nama_anak = $data['nama_anak'];
-$nama_ortu = $data['nama_ortu'];
-$user_id_pendaftar = $data['user_id']; // pastikan user_id pendaftar
+// Validasi POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header("Location: payment.php");
+    exit;
+}
 
-$stmt->close();
+// Ambil data dari form
+$pendaftar_id = intval($_POST['pendaftar_id']);
+$jumlah = intval($_POST['jumlah']);
+$metode = trim($_POST['metode']);
 
-// --- 3. Validasi file upload ---
-if (!isset($_FILES['bukti_pembayaran'])) {
-    die("❌ Error: File bukti pembayaran tidak diterima dari form.");
+// Validasi pendaftar_id
+if (empty($pendaftar_id)) {
+    $_SESSION['error'] = "ID Pendaftar tidak valid!";
+    header("Location: payment.php");
+    exit;
+}
+
+// Cek apakah pendaftar milik user yang login
+$stmt_cek = $conn->prepare("SELECT user_id, status_pembayaran FROM pendaftaran WHERE id = ?");
+$stmt_cek->bind_param("i", $pendaftar_id);
+$stmt_cek->execute();
+$result_cek = $stmt_cek->get_result();
+
+if ($result_cek->num_rows == 0) {
+    $_SESSION['error'] = "Data pendaftaran tidak ditemukan!";
+    header("Location: payment.php");
+    exit;
+}
+
+$data_cek = $result_cek->fetch_assoc();
+if ($data_cek['user_id'] != $_SESSION['user_id']) {
+    $_SESSION['error'] = "Akses ditolak!";
+    header("Location: payment.php");
+    exit;
+}
+
+if ($data_cek['status_pembayaran'] !== 'belum_bayar') {
+    $_SESSION['error'] = "Pembayaran sudah pernah dilakukan!";
+    header("Location: status_pendaftaran.php");
+    exit;
+}
+
+$stmt_cek->close();
+
+// Folder untuk upload bukti pembayaran
+$upload_dir = '../uploads/pembayaran/';
+if (!is_dir($upload_dir)) {
+    mkdir($upload_dir, 0777, true);
+}
+
+// Upload bukti pembayaran
+if (!isset($_FILES['bukti_pembayaran']) || $_FILES['bukti_pembayaran']['error'] !== UPLOAD_ERR_OK) {
+    $_SESSION['error'] = "Gagal upload bukti pembayaran!";
+    header("Location: payment.php");
+    exit;
 }
 
 $file = $_FILES['bukti_pembayaran'];
+$allowed_types = ['image/jpeg', 'image/png', 'application/pdf'];
+$max_size = 2 * 1024 * 1024; // 2MB
 
-if ($file['error'] !== UPLOAD_ERR_OK) {
-    die("❌ Error upload file: " . $file['error']);
+// Validasi tipe file
+if (!in_array($file['type'], $allowed_types)) {
+    $_SESSION['error'] = "Tipe file tidak diizinkan! Hanya JPG, PNG, atau PDF.";
+    header("Location: payment.php");
+    exit;
 }
 
-// --- 4. Simpan file ke folder uploads ---
-$upload_dir = "../uploads/bukti_pembayaran/";
-if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
-
-$ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-$namaFile = "bukti_" . time() . "_" . uniqid() . "." . $ext;
-$tujuan = $upload_dir . $namaFile;
-
-if (!move_uploaded_file($file['tmp_name'], $tujuan)) {
-    die("❌ Gagal menyimpan file ke folder upload.");
+// Validasi ukuran file
+if ($file['size'] > $max_size) {
+    $_SESSION['error'] = "Ukuran file terlalu besar! Maksimal 2MB.";
+    header("Location: payment.php");
+    exit;
 }
 
-// --- 5. Insert data ke tabel payments ---
-$stmt = $conn->prepare("
-    INSERT INTO payments
-    (pendaftar_id, nama_anak, nama_ortu, metode_pembayaran, tanggal_bayar, bukti_path, status_pembayaran)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+// Generate nama file unik
+$extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+$filename = 'bukti_' . $pendaftar_id . '_' . time() . '.' . $extension;
+$filepath = $upload_dir . $filename;
+
+// Pindahkan file
+if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+    $_SESSION['error'] = "Gagal memindahkan file bukti pembayaran!";
+    header("Location: payment.php");
+    exit;
+}
+
+// Ambil nama_anak dan nama_ortu dari tabel pendaftaran
+$stmt_nama = $conn->prepare("SELECT nama_anak, nama_ortu FROM pendaftaran WHERE id = ?");
+$stmt_nama->bind_param("i", $pendaftar_id);
+$stmt_nama->execute();
+$result_nama = $stmt_nama->get_result();
+$data_nama = $result_nama->fetch_assoc();
+$nama_anak = $data_nama['nama_anak'];
+$nama_ortu = $data_nama['nama_ortu'];
+$stmt_nama->close();
+
+// Insert ke tabel payments dengan status dibayar otomatis
+$stmt_bayar = $conn->prepare("
+    INSERT INTO payments 
+    (pendaftar_id, nama_anak, nama_ortu, metode_pembayaran, tanggal_bayar, bukti_path, status_pembayaran) 
+    VALUES (?, ?, ?, ?, NOW(), ?, 'dibayar')
 ");
 
-$stmt->bind_param(
-    "issssss",
-    $pendaftar_id,
-    $nama_anak,
-    $nama_ortu,
+$stmt_bayar->bind_param(
+    "issss", 
+    $pendaftar_id, 
+    $nama_anak, 
+    $nama_ortu, 
     $metode,
-    $tanggal,
-    $namaFile,
-    $status
+    $filename
 );
 
-if (!$stmt->execute()) {
-    die("❌ Gagal insert payment: " . $stmt->error);
+if (!$stmt_bayar->execute()) {
+    $_SESSION['error'] = "Gagal menyimpan data pembayaran: " . $stmt_bayar->error;
+    // Hapus file yang sudah diupload
+    unlink($filepath);
+    header("Location: payment.php");
+    exit;
 }
-$stmt->close();
 
-// --- 6. Update status_pembayaran di tabel pendaftaran ---
-$update = $conn->prepare("UPDATE pendaftaran SET status_pembayaran = 'dibayar' WHERE id = ?");
-$update->bind_param("i", $pendaftar_id);
+$stmt_bayar->close();
 
-if (!$update->execute()) {
-    die("❌ Gagal update status pendaftaran: " . $update->error);
-}
-$update->close();
-
-// --- 7. Tambahkan notifikasi pembayaran ---
-$message = "User '{$nama_ortu}' telah melakukan pembayaran untuk anak '{$nama_anak}'";
-$type = "pembayaran";
-
-$stmt_notif = $conn->prepare("
-    INSERT INTO notifications (user_id, pendaftaran_id, message, type, created_at)
-    VALUES (?, ?, ?, ?, NOW())
+// Update status pembayaran di tabel pendaftaran menjadi dibayar otomatis
+$stmt_update = $conn->prepare("
+    UPDATE pendaftaran 
+    SET status_pembayaran = 'dibayar' 
+    WHERE id = ?
 ");
-$stmt_notif->bind_param("iiss", $user_id_pendaftar, $pendaftar_id, $message, $type);
+$stmt_update->bind_param("i", $pendaftar_id);
+$stmt_update->execute();
+$stmt_update->close();
 
-if (!$stmt_notif->execute()) {
-    die("❌ Gagal menambahkan notifikasi: " . $stmt_notif->error);
-}
-$stmt_notif->close();
-
-// --- 8. Redirect ke halaman status ---
-$_SESSION['pendaftaran_id'] = $pendaftar_id;
-header("Location: status.php?upload=berhasil");
-exit();
+// Berhasil - Status otomatis DIBAYAR
+$_SESSION['success'] = "Pembayaran berhasil! Status: DIBAYAR";
+header("Location: status_pendaftaran.php");
+exit;
 ?>

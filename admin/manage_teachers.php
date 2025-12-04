@@ -142,7 +142,6 @@ $teachers = $q->fetch_all(MYSQLI_ASSOC);
         .stat-hadir { color: #28a745; }
         .stat-terlambat { color: #ffc107; }
         .stat-izin { color: #0d6efd; }
-        .stat-sakit { color: #dc3545; }
         .stat-alfa { color: #6c757d; }
 
         /* Rekap Table */
@@ -465,7 +464,7 @@ $teachers = $q->fetch_all(MYSQLI_ASSOC);
         </div>
     </div>
 
-    <!-- Stats Cards -->
+    <!-- Stats Cards (TANPA SAKIT) -->
     <div class="stats-container" id="statsContainer">
         <div class="stat-card">
             <div class="stat-icon stat-hadir">
@@ -487,13 +486,6 @@ $teachers = $q->fetch_all(MYSQLI_ASSOC);
             </div>
             <div class="stat-number stat-izin" id="statIzin">0</div>
             <div class="stat-label">Total Izin</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon stat-sakit">
-                <i class="bi bi-hospital-fill"></i>
-            </div>
-            <div class="stat-number stat-sakit" id="statSakit">0</div>
-            <div class="stat-label">Total Sakit</div>
         </div>
         <div class="stat-card">
             <div class="stat-icon stat-alfa">
@@ -521,7 +513,7 @@ $teachers = $q->fetch_all(MYSQLI_ASSOC);
             </div>
         </div>
 
-        <!-- Legend -->
+        <!-- Legend (TANPA SAKIT) -->
         <div class="legend">
             <div class="legend-item">
                 <div class="legend-color hadir">H</div>
@@ -534,10 +526,6 @@ $teachers = $q->fetch_all(MYSQLI_ASSOC);
             <div class="legend-item">
                 <div class="legend-color izin">I</div>
                 <span>Izin</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color sakit">S</div>
-                <span>Sakit</span>
             </div>
             <div class="legend-item">
                 <div class="legend-color alfa">A</div>
@@ -636,13 +624,17 @@ $teachers = $q->fetch_all(MYSQLI_ASSOC);
         });
     }
 
-    // Update Statistics
+    // Update Statistics (TANPA SAKIT)
     function updateStats(stats) {
-        document.getElementById('statHadir').textContent = stats.hadir || 0;
-        document.getElementById('statTerlambat').textContent = stats.terlambat || 0;
-        document.getElementById('statIzin').textContent = stats.izin || 0;
-        document.getElementById('statSakit').textContent = stats.sakit || 0;
-        document.getElementById('statAlfa').textContent = stats.alfa || 0;
+        const hadirEl = document.getElementById('statHadir');
+        const terlambatEl = document.getElementById('statTerlambat');
+        const izinEl = document.getElementById('statIzin');
+        const alfaEl = document.getElementById('statAlfa');
+        
+        if (hadirEl) hadirEl.textContent = stats.hadir || 0;
+        if (terlambatEl) terlambatEl.textContent = stats.terlambat || 0;
+        if (izinEl) izinEl.textContent = stats.izin || 0;
+        if (alfaEl) alfaEl.textContent = stats.alfa || 0;
     }
 
     // Generate Table HTML

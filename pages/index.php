@@ -2,7 +2,7 @@
 include '../includes/header.php';
 ?>
 
-    <main class="container-fluid p-0">
+    <main class="container-fluid p-0">  
         <!-- Hero Section Slider -->
         <section class="hero-section">
             <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel" style="height: 100vh;">

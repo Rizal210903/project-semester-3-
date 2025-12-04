@@ -299,16 +299,48 @@ if ($result_stats) {
             box-shadow: 0 4px 12px rgba(0,123,255,0.3);
         }
 
-        /* Document Button */
+        /* Document Button - PERBAIKAN */
         .btn-doc {
             font-size: 11px;
             padding: 6px 12px;
             border-radius: 6px;
             transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .btn-doc:hover {
             transform: scale(1.05);
+        }
+
+        .doc-status {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            align-items: center;
+        }
+
+        /* Modal untuk preview dokumen */
+        .modal-preview .modal-dialog {
+            max-width: 90%;
+            margin: 30px auto;
+        }
+
+        .modal-preview .modal-body {
+            padding: 0;
+            max-height: 80vh;
+            overflow: auto;
+        }
+
+        .modal-preview img {
+            width: 100%;
+            height: auto;
+        }
+
+        .modal-preview iframe {
+            width: 100%;
+            height: 80vh;
+            border: none;
         }
 
         /* Empty State */
@@ -460,10 +492,10 @@ if ($result_stats) {
                         <th>Nama Anak</th>
                         <th>Nama Orang Tua</th>
                         <th width="120">Tanggal Daftar</th>
-                        <th width="100">Kartu Keluarga</th>
-                        <th width="100">Akta Kelahiran</th>
-                        <th width="100">Pas Foto</th>
-                        <th width="100">Surat Sehat</th>
+                        <th width="120">Kartu Keluarga</th>
+                        <th width="120">Akta Kelahiran</th>
+                        <th width="120">Pas Foto</th>
+                        <th width="120">Surat Sehat</th>
                         <th width="120">Status</th>
                         <th width="150">Aksi</th>
                     </tr>
@@ -486,16 +518,55 @@ if ($result_stats) {
                             <?= date('d M Y', strtotime($row['tanggal_daftar'])); ?>
                         </td>
 
-                        <!-- Dokumen -->
-                        <?php foreach(['kartu_keluarga','akta_kelahiran','pas_foto','surat_sehat'] as $dok): ?>
+                        <!-- Dokumen - PERBAIKAN -->
+                        <?php 
+                        $dokumen_labels = [
+                            'kartu_keluarga' => 'KK',
+                            'akta_kelahiran' => 'Akta',
+                            'pas_foto' => 'Foto',
+                            'surat_sehat' => 'Surat'
+                        ];
+                        
+                        foreach($dokumen_labels as $dok => $label): 
+                            $file_path = $row[$dok];
+                            $full_path = '../uploads/' . $file_path;
+                        ?>
                         <td>
-                            <?php if ($row[$dok]): ?>
-                                <a href="../uploads/<?= $row[$dok]; ?>" target="_blank" class="btn btn-outline-primary btn-sm btn-doc">
-                                    <i class="bi bi-eye"></i> Lihat
-                                </a>
-                            <?php else: ?>
-                                <span class="badge bg-secondary">Belum ada</span>
-                            <?php endif; ?>
+                            <div class="doc-status">
+                                <?php if (!empty($file_path) && file_exists($full_path)): 
+                                    // Cek ekstensi file
+                                    $ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+                                    $is_image = in_array($ext, ['jpg', 'jpeg', 'png', 'gif']);
+                                    $is_pdf = ($ext == 'pdf');
+                                ?>
+                                    <!-- Tombol Lihat -->
+                                    <button type="button" class="btn btn-primary btn-sm btn-doc" 
+                                            onclick="previewDocument('<?= htmlspecialchars($file_path); ?>', '<?= $label; ?>', <?= $is_image ? 'true' : 'false'; ?>)">
+                                        <i class="bi bi-eye"></i> Lihat
+                                    </button>
+                                    
+                                    <!-- Tombol Download -->
+                                    <a href="../uploads/<?= htmlspecialchars($file_path); ?>" 
+                                       download 
+                                       class="btn btn-success btn-sm btn-doc"
+                                       title="Download <?= $label; ?>">
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                    
+                                    <!-- Info ukuran file -->
+                                    <small class="text-muted">
+                                        <?= number_format(filesize($full_path)/1024, 1); ?> KB
+                                    </small>
+                                <?php elseif (!empty($file_path)): ?>
+                                    <span class="badge bg-warning">
+                                        <i class="bi bi-exclamation-triangle"></i> File hilang
+                                    </span>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-x-circle"></i> Belum upload
+                                    </span>
+                                <?php endif; ?>
+                            </div>
                         </td>
                         <?php endforeach; ?>
 
@@ -538,6 +609,27 @@ if ($result_stats) {
 
 </main>
 
+<!-- Modal Preview Dokumen -->
+<div class="modal fade modal-preview" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">Preview Dokumen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <!-- Content akan diisi oleh JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <a href="#" id="downloadLink" class="btn btn-success" download>
+                    <i class="bi bi-download"></i> Download
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -550,6 +642,51 @@ if ($result_stats) {
         sidebar.classList.toggle('collapsed');
         mainContent.classList.toggle('collapsed');
     });
+
+    // Preview Document Function - PERBAIKAN
+    function previewDocument(filename, label, isImage) {
+        const filePath = '../uploads/' + filename;
+        const previewContent = document.getElementById('previewContent');
+        const previewModalLabel = document.getElementById('previewModalLabel');
+        const downloadLink = document.getElementById('downloadLink');
+        
+        // Set judul modal
+        previewModalLabel.textContent = 'Preview ' + label;
+        
+        // Set link download
+        downloadLink.href = filePath;
+        downloadLink.download = filename;
+        
+        // Tampilkan konten sesuai tipe file
+        if (isImage) {
+            previewContent.innerHTML = `
+                <img src="${filePath}" alt="${label}" class="img-fluid" 
+                     onerror="this.parentElement.innerHTML='<div class=\'alert alert-danger\'>Gagal memuat gambar</div>'">
+            `;
+        } else {
+            // Untuk PDF dan file lainnya
+            const ext = filename.split('.').pop().toLowerCase();
+            if (ext === 'pdf') {
+                previewContent.innerHTML = `
+                    <iframe src="${filePath}" 
+                            onload="this.style.display='block'" 
+                            onerror="this.parentElement.innerHTML='<div class=\'alert alert-danger\'>Gagal memuat PDF. <a href=\'${filePath}\' target=\'_blank\'>Buka di tab baru</a></div>'">
+                    </iframe>
+                `;
+            } else {
+                previewContent.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        File ini tidak dapat di-preview. Silakan download untuk melihat isinya.
+                    </div>
+                `;
+            }
+        }
+        
+        // Tampilkan modal
+        const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+        modal.show();
+    }
 
     // Filter by Status (from stat cards)
     function filterByStatus(status) {

@@ -1,97 +1,154 @@
 <?php
 session_start();
+require_once '../includes/config.php';
 
-// Cek user sudah login
+// Cek login
 if (!isset($_SESSION['user_id'])) {
-    header("Location: /project-semester-3-/login.php");
+    header("Location: ../login.php");
     exit;
 }
 
-// Koneksi database
-$servername = "localhost";
-$username   = "root";
-$password   = "";
-$dbname     = "tk_pertiwi_db";
-
-try {
-    $pdo = new PDO("mysql:host=$servername;dbname=$dbname;charset=utf8mb4", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch(PDOException $e) {
-    die("Koneksi database gagal: " . $e->getMessage());
-}
-
-// Pastikan form di-submit
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    die("Akses tidak valid.");
-}
-
-// Ambil data
-$nama_anak            = $_POST['nama_anak'];
-$nama_ortu            = $_POST['nama_ortu'];
-$tanggal_lahir_anak   = $_POST['tanggal_lahir_anak'];
-$alamat               = $_POST['alamat'];
-$nomor_telepon        = $_POST['nomor_telepon'];
-$email                = $_POST['email'];
-
 $user_id = $_SESSION['user_id'];
 
-// Folder upload
-$uploadDir = "../uploads/pendaftaran/";
-if (!file_exists($uploadDir)) {
-    mkdir($uploadDir, 0777, true);
+// Cek apakah sudah pernah daftar
+$query_cek = "SELECT id FROM pendaftaran WHERE user_id = ?";
+$stmt = $conn->prepare($query_cek);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $_SESSION['error'] = "Anda sudah pernah mendaftar sebelumnya!";
+    header("Location: pendaftaran.php");
+    exit;
 }
 
-// Fungsi upload file
-function uploadDokumen($fileKey, $uploadDir) {
-    if (isset($_FILES[$fileKey]) && $_FILES[$fileKey]["error"] == 0) {
-        $ext = pathinfo($_FILES[$fileKey]["name"], PATHINFO_EXTENSION);
-        $filename = $fileKey . "_" . time() . "." . $ext;
-        $path = $uploadDir . $filename;
+// Validasi POST data
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header("Location: pendaftaran.php");
+    exit;
+}
 
-        if (move_uploaded_file($_FILES[$fileKey]["tmp_name"], $path)) {
-            return $filename;
-        }
+// Ambil data dari form
+$nama_anak = trim($_POST['nama_anak']);
+$tanggal_lahir_anak = $_POST['tanggal_lahir_anak'];
+$nama_ortu = trim($_POST['nama_ortu']);
+$nomor_telepon = trim($_POST['nomor_telepon']);
+$email = trim($_POST['email']);
+$alamat = trim($_POST['alamat']);
+
+// Generate access code (6 digit random)
+$access_code = strtoupper(substr(md5(uniqid(rand(), true)), 0, 6));
+
+// Folder untuk upload dokumen
+$upload_dir = '../uploads/dokumen/';
+if (!is_dir($upload_dir)) {
+    mkdir($upload_dir, 0777, true);
+}
+
+// Fungsi untuk upload file
+function uploadFile($file, $upload_dir, $prefix) {
+    $allowed_types = ['image/jpeg', 'image/png', 'application/pdf'];
+    $max_size = 2 * 1024 * 1024; // 2MB
+    
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        return ['success' => false, 'message' => 'Gagal upload file ' . $prefix];
     }
-    return null;
+    
+    if (!in_array($file['type'], $allowed_types)) {
+        return ['success' => false, 'message' => 'Tipe file ' . $prefix . ' tidak diizinkan'];
+    }
+    
+    if ($file['size'] > $max_size) {
+        return ['success' => false, 'message' => 'Ukuran file ' . $prefix . ' terlalu besar'];
+    }
+    
+    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $filename = $prefix . '_' . time() . '_' . uniqid() . '.' . $extension;
+    $filepath = $upload_dir . $filename;
+    
+    if (move_uploaded_file($file['tmp_name'], $filepath)) {
+        return ['success' => true, 'filename' => $filename];
+    }
+    
+    return ['success' => false, 'message' => 'Gagal memindahkan file ' . $prefix];
 }
 
-// Upload dokumen
-$akta_kelahiran  = uploadDokumen('akta_kelahiran', $uploadDir);
-$kartu_keluarga  = uploadDokumen('kartu_keluarga', $uploadDir);
-$pas_foto        = uploadDokumen('pas_foto', $uploadDir);
-$surat_sehat     = uploadDokumen('surat_sehat', $uploadDir);
+// Upload semua dokumen
+$akta = uploadFile($_FILES['akta_kelahiran'], $upload_dir, 'akta');
+if (!$akta['success']) {
+    $_SESSION['error'] = $akta['message'];
+    header("Location: pendaftaran.php");
+    exit;
+}
 
-// Simpan ke database
-$stmt = $pdo->prepare("
-    INSERT INTO pendaftaran 
-    (user_id, nama_anak, nama_ortu, tanggal_lahir_anak, alamat, nomor_telepon, email, 
-     akta_kelahiran, kartu_keluarga, pas_foto, surat_sehat, status_pembayaran, status_ppdb)
-    VALUES 
-    (:user_id, :nama_anak, :nama_ortu, :tanggal_lahir_anak, :alamat, :nomor_telepon, :email,
-     :akta_kelahiran, :kartu_keluarga, :pas_foto, :surat_sehat, 'belum_bayar', 'pending')
-");
+$kk = uploadFile($_FILES['kartu_keluarga'], $upload_dir, 'kk');
+if (!$kk['success']) {
+    $_SESSION['error'] = $kk['message'];
+    header("Location: pendaftaran.php");
+    exit;
+}
 
-$stmt->execute([
-    ':user_id'            => $user_id,
-    ':nama_anak'          => $nama_anak,
-    ':nama_ortu'          => $nama_ortu,
-    ':tanggal_lahir_anak' => $tanggal_lahir_anak,
-    ':alamat'             => $alamat,
-    ':nomor_telepon'      => $nomor_telepon,
-    ':email'              => $email,
-    ':akta_kelahiran'     => $akta_kelahiran,
-    ':kartu_keluarga'     => $kartu_keluarga,
-    ':pas_foto'           => $pas_foto,
-    ':surat_sehat'        => $surat_sehat
-]);
+$foto = uploadFile($_FILES['pas_foto'], $upload_dir, 'foto');
+if (!$foto['success']) {
+    $_SESSION['error'] = $foto['message'];
+    header("Location: pendaftaran.php");
+    exit;
+}
 
-// Ambil ID terakhir
-$pendaftaran_id = $pdo->lastInsertId();
+$surat_sehat = uploadFile($_FILES['surat_sehat'], $upload_dir, 'surat_sehat');
+if (!$surat_sehat['success']) {
+    $_SESSION['error'] = $surat_sehat['message'];
+    header("Location: pendaftaran.php");
+    exit;
+}
 
-// Simpan ke session agar dapat dilihat di status
-$_SESSION['pendaftaran_id'] = $pendaftaran_id;
+// Insert data ke database
+$query = "INSERT INTO pendaftaran (
+    user_id, 
+    nama_anak, 
+    tanggal_lahir_anak, 
+    nama_ortu, 
+    nomor_telepon, 
+    email, 
+    alamat, 
+    akta_kelahiran, 
+    kartu_keluarga, 
+    pas_foto, 
+    surat_sehat, 
+    access_code,
+    status_ppdb,
+    status_pembayaran,
+    tanggal_daftar
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'belum_bayar', NOW())";
 
-// Redirect ke halaman status
-header("Location: status.php");
-exit;
+$stmt = $conn->prepare($query);
+$stmt->bind_param(
+    "isssssssssss", 
+    $user_id,
+    $nama_anak,
+    $tanggal_lahir_anak,
+    $nama_ortu,
+    $nomor_telepon,
+    $email,
+    $alamat,
+    $akta['filename'],
+    $kk['filename'],
+    $foto['filename'],
+    $surat_sehat['filename'],
+    $access_code
+);
+
+if ($stmt->execute()) {
+    $_SESSION['success'] = "Pendaftaran berhasil! Silakan lakukan pembayaran.";
+    $_SESSION['pendaftaran_id'] = $stmt->insert_id;
+    
+    // Redirect ke halaman pembayaran
+    header("Location: payment.php");
+    exit;
+} else {
+    $_SESSION['error'] = "Gagal menyimpan data: " . $stmt->error;
+    header("Location: pendaftaran.php");
+    exit;
+}
 ?>

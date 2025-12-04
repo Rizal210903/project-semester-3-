@@ -151,7 +151,7 @@ $syarat = $data["syarat"] ?? "";
                         <li><a class="dropdown-item" href="#" onclick="daftarSekarang(event)">Daftar Sekarang</a></li>
 
                         <!-- CEK STATUS -->
-                        <li><a class="dropdown-item" href="#" onclick="cekStatus(event)">Cek Status Pendaftaran</a></li>
+                        <li><a class="dropdown-item" href="status_pendaftaran.php">Cek Status Pendaftaran</a></li>
 
                         <li><a class="dropdown-item" href="panduan_pbdb.php">Panduan PPDB</a></li>
                     </ul>
