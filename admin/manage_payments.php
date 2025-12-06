@@ -145,7 +145,7 @@ include '../includes/config.php';
 
         .table-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
             flex-wrap: wrap;
@@ -237,6 +237,20 @@ include '../includes/config.php';
             box-shadow: 0 4px 12px rgba(0,123,255,0.3);
         }
 
+        .img-error {
+            width: 80px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8d7da;
+            border-radius: 8px;
+            color: #721c24;
+            font-size: 10px;
+            text-align: center;
+            padding: 5px;
+        }
+
         /* Status Badges */
         .badge-status {
             display: inline-block;
@@ -295,6 +309,8 @@ include '../includes/config.php';
         .modal-img {
             width: 100%;
             border-radius: 0;
+            max-height: 80vh;
+            object-fit: contain;
         }
 
         /* Auto Refresh Indicator */
@@ -320,6 +336,17 @@ include '../includes/config.php';
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
+        }
+
+        /* Debug Info */
+        .debug-info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            display: none; /* Set to 'block' untuk debugging */
         }
 
         /* Responsive */
@@ -397,6 +424,14 @@ include '../includes/config.php';
         }
     }
     ?>
+
+    <!-- Debug Info (uncomment untuk debugging) -->
+    <!-- <div class="debug-info">
+        <strong>Debug Info:</strong><br>
+        Current File: <?php echo __FILE__; ?><br>
+        Document Root: <?php echo $_SERVER['DOCUMENT_ROOT']; ?><br>
+        Upload Path: ../uploads/pembayaran/
+    </div> -->
 
     <!-- Stats Cards -->
     <div class="stats-container">
@@ -496,16 +531,27 @@ include '../includes/config.php';
                         $no = 1;
                         while ($row = $result->fetch_assoc()):
                             $statusClass = "status-" . $row['status_pembayaran'];
-                            $image_src = empty($row['bukti_path']) ? '' : '../uploads/bukti_pembayaran/' . htmlspecialchars($row['bukti_path']);
+                            
+                            // PERBAIKAN PATH GAMBAR
+                            // Sesuaikan dengan struktur folder: uploads/pembayaran/
+                            $image_src = '';
+                            if (!empty($row['bukti_path'])) {
+                                // Hapus '../uploads/pembayaran/' jika sudah ada di database
+                                $filename = basename($row['bukti_path']);
+                                $image_src = '../uploads/pembayaran/' . $filename;
+                                
+                                // Alternative: jika di database sudah full path
+                                // $image_src = $row['bukti_path'];
+                            }
                     ?>
-                    <tr data-status="<?= $row['status_pembayaran']; ?>" data-metode="<?= $row['metode_pembayaran']; ?>">
+                    <tr data-status="<?= $row['status_pembayaran']; ?>" data-metode="<?= htmlspecialchars($row['metode_pembayaran']); ?>">
                         <td><?= $no++; ?></td>
                         <td style="text-align: left; font-weight: 600;"><?= htmlspecialchars($row['nama_anak']); ?></td>
                         <td style="text-align: left;"><?= htmlspecialchars($row['nama_ortu']); ?></td>
                         <td>
                             <?php if ($row['metode_pembayaran']): ?>
                                 <span class="badge bg-info text-white">
-                                    <i class="bi bi-credit-card"></i> <?= $row['metode_pembayaran']; ?>
+                                    <i class="bi bi-credit-card"></i> <?= htmlspecialchars($row['metode_pembayaran']); ?>
                                 </span>
                             <?php else: ?>
                                 <span class="text-muted">-</span>
@@ -520,13 +566,18 @@ include '../includes/config.php';
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if (!empty($row['bukti_path'])): ?>
-                                <img src="<?= $image_src; ?>" 
-                                    alt="Bukti" 
+                            <?php if (!empty($image_src) && file_exists($image_src)): ?>
+                                <img src="<?= htmlspecialchars($image_src); ?>" 
+                                    alt="Bukti Pembayaran" 
                                     class="bukti-img"
-                                    onclick="showModal('<?= $image_src; ?>', '<?= htmlspecialchars($row['nama_anak']); ?>')">
+                                    onclick="showModal('<?= htmlspecialchars($image_src); ?>', '<?= htmlspecialchars($row['nama_anak']); ?>')"
+                                    onerror="this.parentElement.innerHTML='<div class=\'img-error\'>Gambar tidak ditemukan</div>'">
+                            <?php elseif (!empty($row['bukti_path'])): ?>
+                                <div class="img-error">
+                                    <small>File tidak ditemukan<br><?= htmlspecialchars(basename($row['bukti_path'])); ?></small>
+                                </div>
                             <?php else: ?>
-                                <span class="badge bg-secondary">Belum ada</span>
+                                <span class="badge bg-secondary">Belum upload</span>
                             <?php endif; ?>
                         </td>
                         <td>

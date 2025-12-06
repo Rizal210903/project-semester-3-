@@ -6,8 +6,34 @@ if (!isset($_SESSION['admin_id'])) {
     die("Harus login sebagai admin!");
 }
 
+// Handle Mark All Read
+if (isset($_GET['mark_all_read'])) {
+    $stmt = $conn->prepare("UPDATE notifications SET is_read = 1 WHERE is_read = 0");
+    $stmt->execute();
+    $stmt->close();
+    echo "success";
+    exit();
+}
+
+// Handle Clear All
+if (isset($_GET['clear_all'])) {
+    $stmt = $conn->prepare("DELETE FROM notifications");
+    $stmt->execute();
+    $stmt->close();
+    echo "success";
+    exit();
+}
+
+// Query mengambil data dari tabel pendaftaran
 $stmt = $conn->prepare("
-    SELECT n.id, n.message, n.type, n.created_at, p.nama_anak, p.nama_ortu, n.is_read
+    SELECT 
+        n.id, 
+        n.message, 
+        n.type, 
+        n.created_at, 
+        p.nama_anak,
+        p.nama_ortu,
+        n.is_read
     FROM notifications n
     LEFT JOIN pendaftaran p ON n.pendaftaran_id = p.id
     ORDER BY n.created_at DESC
@@ -57,6 +83,30 @@ foreach ($notifications as $n) {
             padding: 0 20px;
             position: relative;
             z-index: 1;
+        }
+
+        /* Back Button */
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: white;
+            border: 2px solid #d6eaff;
+            border-radius: 10px;
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .back-button:hover {
+            background: #007bff;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
         }
 
         /* Header */
@@ -383,10 +433,15 @@ foreach ($notifications as $n) {
             box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
         }
 
-        .btn-mark-all:hover {
+        .btn-mark-all:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
             background: #0056b3;
+        }
+
+        .btn-mark-all:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .btn-clear-all {
@@ -396,11 +451,16 @@ foreach ($notifications as $n) {
             border: 2px solid #d6eaff;
         }
 
-        .btn-clear-all:hover {
+        .btn-clear-all:hover:not(:disabled) {
             background: #dc3545;
             color: white;
             transform: translateY(-2px);
             border-color: #dc3545;
+        }
+
+        .btn-clear-all:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         /* Empty State */
@@ -453,27 +513,6 @@ foreach ($notifications as $n) {
             }
         }
 
-        /* Loading Animation */
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #e9ecef;
-            border-top-color: #007bff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
         /* Stagger animation for cards */
         .notif-card:nth-child(1) { animation-delay: 0.1s; }
         .notif-card:nth-child(2) { animation-delay: 0.2s; }
@@ -487,6 +526,12 @@ foreach ($notifications as $n) {
 
     <div class="notif-container">
 
+        <!-- Back Button -->
+        <a href="admin_dashboard.php" class="back-button">
+            <i class="bi bi-arrow-left"></i>
+            Kembali ke Dashboard
+        </a>
+
         <!-- Header Section -->
         <div class="header-section">
             <h1 class="section-title">
@@ -497,11 +542,11 @@ foreach ($notifications as $n) {
 
             <div class="stats-row">
                 <div class="stat-card">
-                    <div class="stat-number"><?= count($notifications) ?></div>
+                    <div class="stat-number" id="totalCount"><?= count($notifications) ?></div>
                     <div class="stat-label">Total Notifikasi</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number"><?= $unread_count ?></div>
+                    <div class="stat-number" id="unreadCount"><?= $unread_count ?></div>
                     <div class="stat-label">Belum Dibaca</div>
                 </div>
             </div>
@@ -509,11 +554,11 @@ foreach ($notifications as $n) {
 
         <!-- Action Buttons -->
         <div class="action-buttons">
-            <button id="markAllReadBtn" class="btn-action btn-mark-all">
+            <button id="markAllReadBtn" class="btn-action btn-mark-all" <?= $unread_count == 0 ? 'disabled' : '' ?>>
                 <i class="bi bi-check-all"></i>
                 Tandai Semua Sudah Dibaca
             </button>
-            <button id="clearAllBtn" class="btn-action btn-clear-all">
+            <button id="clearAllBtn" class="btn-action btn-clear-all" <?= count($notifications) == 0 ? 'disabled' : '' ?>>
                 <i class="bi bi-trash"></i>
                 Hapus Semua
             </button>
@@ -533,12 +578,6 @@ foreach ($notifications as $n) {
             <button class="filter-btn" data-filter="unread">
                 <i class="bi bi-envelope-fill"></i> Belum Dibaca
             </button>
-        </div>
-
-        <!-- Loading -->
-        <div class="loading">
-            <div class="spinner"></div>
-            <p style="color: #666; margin-top: 15px;">Memuat notifikasi...</p>
         </div>
 
         <!-- Notifications List -->
@@ -609,28 +648,32 @@ foreach ($notifications as $n) {
     <script>
         // Mark all as read
         document.getElementById("markAllReadBtn").addEventListener("click", function() {
+            if (this.disabled) return;
+            
             this.disabled = true;
             this.innerHTML = '<i class="bi bi-hourglass-split"></i> Memproses...';
 
             fetch("notifications.php?mark_all_read=1")
                 .then(response => response.text())
                 .then(data => {
-                    // Remove unread class and badge
-                    document.querySelectorAll(".notif-card.unread").forEach(card => {
-                        card.classList.remove("unread");
-                        const badge = card.querySelector(".unread-badge");
-                        if (badge) badge.remove();
-                    });
+                    if (data.includes('success')) {
+                        // Remove unread class and badge
+                        document.querySelectorAll(".notif-card.unread").forEach(card => {
+                            card.classList.remove("unread");
+                            card.dataset.read = "1";
+                            const badge = card.querySelector(".unread-badge");
+                            if (badge) badge.remove();
+                        });
 
-                    // Update unread count
-                    document.querySelector(".stat-card:nth-child(2) .stat-number").textContent = "0";
+                        // Update unread count
+                        document.getElementById("unreadCount").textContent = "0";
 
-                    // Reset button
-                    this.disabled = false;
+                        // Show success message
+                        showToast("Semua notifikasi telah ditandai sebagai dibaca", "success");
+                    }
+                    
+                    // Keep button disabled
                     this.innerHTML = '<i class="bi bi-check-all"></i> Tandai Semua Sudah Dibaca';
-
-                    // Show success message
-                    showToast("Semua notifikasi telah ditandai sebagai dibaca", "success");
                 })
                 .catch(error => {
                     console.error("Error:", error);
@@ -642,28 +685,41 @@ foreach ($notifications as $n) {
 
         // Clear all notifications
         document.getElementById("clearAllBtn").addEventListener("click", function() {
+            if (this.disabled) return;
+            
             if (confirm("Apakah Anda yakin ingin menghapus semua notifikasi?")) {
                 this.disabled = true;
                 this.innerHTML = '<i class="bi bi-hourglass-split"></i> Menghapus...';
                 
-                // Simulate delete (implement your own endpoint)
-                setTimeout(() => {
-                    document.getElementById("notificationsList").innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-icon">🔔</div>
-                            <h3 class="empty-title">Belum Ada Notifikasi</h3>
-                            <p class="empty-text">Notifikasi baru akan muncul di sini</p>
-                        </div>
-                    `;
-                    
-                    document.querySelector(".stat-card:first-child .stat-number").textContent = "0";
-                    document.querySelector(".stat-card:nth-child(2) .stat-number").textContent = "0";
-                    
-                    this.disabled = false;
-                    this.innerHTML = '<i class="bi bi-trash"></i> Hapus Semua';
-                    
-                    showToast("Semua notifikasi telah dihapus", "success");
-                }, 1000);
+                fetch("notifications.php?clear_all=1")
+                    .then(response => response.text())
+                    .then(data => {
+                        if (data.includes('success')) {
+                            document.getElementById("notificationsList").innerHTML = `
+                                <div class="empty-state">
+                                    <div class="empty-icon">🔔</div>
+                                    <h3 class="empty-title">Belum Ada Notifikasi</h3>
+                                    <p class="empty-text">Notifikasi baru akan muncul di sini</p>
+                                </div>
+                            `;
+                            
+                            document.getElementById("totalCount").textContent = "0";
+                            document.getElementById("unreadCount").textContent = "0";
+                            
+                            // Disable both buttons
+                            document.getElementById("markAllReadBtn").disabled = true;
+                            
+                            showToast("Semua notifikasi telah dihapus", "success");
+                        }
+                        
+                        this.innerHTML = '<i class="bi bi-trash"></i> Hapus Semua';
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                        this.disabled = false;
+                        this.innerHTML = '<i class="bi bi-trash"></i> Hapus Semua';
+                        showToast("Terjadi kesalahan", "error");
+                    });
             }
         });
 
@@ -716,6 +772,33 @@ foreach ($notifications as $n) {
                 setTimeout(() => toast.remove(), 500);
             }, 3000);
         }
+
+        // Auto refresh notifikasi setiap 30 detik (opsional)
+        setInterval(() => {
+            fetch('notifications.php')
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newTotal = doc.getElementById('totalCount').textContent;
+                    const newUnread = doc.getElementById('unreadCount').textContent;
+                    
+                    const currentTotal = document.getElementById('totalCount').textContent;
+                    const currentUnread = document.getElementById('unreadCount').textContent;
+                    
+                    // Update jika ada perubahan
+                    if (newTotal !== currentTotal || newUnread !== currentUnread) {
+                        document.getElementById('totalCount').textContent = newTotal;
+                        document.getElementById('unreadCount').textContent = newUnread;
+                        
+                        // Show notification jika ada notifikasi baru
+                        if (parseInt(newTotal) > parseInt(currentTotal)) {
+                            showToast("Ada notifikasi baru!", "success");
+                        }
+                    }
+                })
+                .catch(error => console.error('Auto refresh error:', error));
+        }, 30000); // 30 detik
     </script>
 
 </body>

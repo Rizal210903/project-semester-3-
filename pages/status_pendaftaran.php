@@ -393,13 +393,8 @@ $status_bayar = getStatusPembayaranBadge($data['status_pembayaran']);
                     </div>
                     <?php endif; ?>
 
-                    <?php if (!empty($data['access_code'])): ?>
-                    <div class="access-code-display">
-                        <div class="info-label"><i class="bi bi-key-fill"></i> Kode Akses</div>
-                        <h3><?= htmlspecialchars($data['access_code']) ?></h3>
-                        <small class="text-muted">Simpan kode ini untuk keperluan verifikasi</small>
-                    </div>
-                    <?php endif; ?>
+                   
+                    >
                 </div>
 
                 <div class="status-card">

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../includes/config.php';
+require_once '../includes/notification_helper.php'; // ← TAMBAHKAN INI (BARIS BARU)
 
 // Cek login
 if (!isset($_SESSION['user_id'])) {
@@ -141,6 +142,19 @@ $stmt_update = $conn->prepare("
 $stmt_update->bind_param("i", $pendaftar_id);
 $stmt_update->execute();
 $stmt_update->close();
+
+// ============================================
+// BUAT NOTIFIKASI PEMBAYARAN - BAGIAN BARU
+// ============================================
+$user_id = $_SESSION['user_id'];
+$message = "Bukti pembayaran baru dari {$nama_anak} (Orang Tua: {$nama_ortu}) - Status: DIBAYAR";
+$notif_result = createNotification($conn, $user_id, $pendaftar_id, 'pembayaran', $message);
+
+// Debug log (opsional - bisa dihapus setelah berhasil)
+if (!$notif_result) {
+    error_log("GAGAL membuat notifikasi pembayaran untuk pendaftaran ID: " . $pendaftar_id);
+}
+// ============================================
 
 // Berhasil - Status otomatis DIBAYAR
 $_SESSION['success'] = "Pembayaran berhasil! Status: DIBAYAR";

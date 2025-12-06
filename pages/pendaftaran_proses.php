@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../includes/config.php';
+require_once '../includes/notification_helper.php'; // ← TAMBAHKAN INI
 
 // Cek login
 if (!isset($_SESSION['user_id'])) {
@@ -140,8 +141,22 @@ $stmt->bind_param(
 );
 
 if ($stmt->execute()) {
+    $pendaftaran_id = $stmt->insert_id;
+    
+    // ============================================
+    // BUAT NOTIFIKASI - BAGIAN YANG DITAMBAHKAN
+    // ============================================
+    $message = "Pendaftaran baru dari {$nama_anak} (Orang Tua: {$nama_ortu})";
+    $notif_result = createNotification($conn, $user_id, $pendaftaran_id, 'pendaftaran', $message);
+    
+    // Debug log (opsional - bisa dihapus setelah berhasil)
+    if (!$notif_result) {
+        error_log("GAGAL membuat notifikasi untuk pendaftaran ID: " . $pendaftaran_id);
+    }
+    // ============================================
+    
     $_SESSION['success'] = "Pendaftaran berhasil! Silakan lakukan pembayaran.";
-    $_SESSION['pendaftaran_id'] = $stmt->insert_id;
+    $_SESSION['pendaftaran_id'] = $pendaftaran_id;
     
     // Redirect ke halaman pembayaran
     header("Location: payment.php");

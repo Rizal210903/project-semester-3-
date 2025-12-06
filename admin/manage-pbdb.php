@@ -2,6 +2,29 @@
 session_start();
 include '../includes/config.php';
 
+// Fungsi helper untuk mendapatkan path dokumen yang benar
+function getDocumentPath($filename) {
+    if (empty($filename)) {
+        return '';
+    }
+    
+    // Kemungkinan lokasi file
+    $possible_paths = [
+        '../uploads/dokumen/' . $filename,      // Path standar baru
+        '../uploads/' . $filename,              // Path lama
+        '../uploads/dokumen/' . basename($filename), // Jika ada subdirectory
+    ];
+    
+    foreach ($possible_paths as $path) {
+        if (file_exists($path)) {
+            return str_replace('../uploads/', '', $path);
+        }
+    }
+    
+    // Default: asumsikan di folder dokumen
+    return 'dokumen/' . basename($filename);
+}
+
 // Ambil data pendaftar
 $result = $conn->query("SELECT * FROM pendaftaran ORDER BY tanggal_daftar DESC");
 
@@ -299,7 +322,7 @@ if ($result_stats) {
             box-shadow: 0 4px 12px rgba(0,123,255,0.3);
         }
 
-        /* Document Button - PERBAIKAN */
+        /* Document Button */
         .btn-doc {
             font-size: 11px;
             padding: 6px 12px;
@@ -518,7 +541,7 @@ if ($result_stats) {
                             <?= date('d M Y', strtotime($row['tanggal_daftar'])); ?>
                         </td>
 
-                        <!-- Dokumen - PERBAIKAN -->
+                        <!-- Dokumen - SUDAH DIPERBAIKI -->
                         <?php 
                         $dokumen_labels = [
                             'kartu_keluarga' => 'KK',
@@ -528,8 +551,9 @@ if ($result_stats) {
                         ];
                         
                         foreach($dokumen_labels as $dok => $label): 
-                            $file_path = $row[$dok];
-                            $full_path = '../uploads/' . $file_path;
+                            // PERBAIKAN: Gunakan fungsi helper untuk mendapatkan path yang benar
+                            $file_path = !empty($row[$dok]) ? getDocumentPath($row[$dok]) : '';
+                            $full_path = !empty($file_path) ? '../uploads/' . $file_path : '';
                         ?>
                         <td>
                             <div class="doc-status">
@@ -557,10 +581,13 @@ if ($result_stats) {
                                     <small class="text-muted">
                                         <?= number_format(filesize($full_path)/1024, 1); ?> KB
                                     </small>
-                                <?php elseif (!empty($file_path)): ?>
+                                <?php elseif (!empty($row[$dok])): ?>
                                     <span class="badge bg-warning">
                                         <i class="bi bi-exclamation-triangle"></i> File hilang
                                     </span>
+                                    <small class="text-muted d-block mt-1" style="font-size: 10px;">
+                                        <?= htmlspecialchars($row[$dok]); ?>
+                                    </small>
                                 <?php else: ?>
                                     <span class="badge bg-secondary">
                                         <i class="bi bi-x-circle"></i> Belum upload
@@ -643,7 +670,7 @@ if ($result_stats) {
         mainContent.classList.toggle('collapsed');
     });
 
-    // Preview Document Function - PERBAIKAN
+    // Preview Document Function - SUDAH DIPERBAIKI
     function previewDocument(filename, label, isImage) {
         const filePath = '../uploads/' + filename;
         const previewContent = document.getElementById('previewContent');
@@ -661,7 +688,7 @@ if ($result_stats) {
         if (isImage) {
             previewContent.innerHTML = `
                 <img src="${filePath}" alt="${label}" class="img-fluid" 
-                     onerror="this.parentElement.innerHTML='<div class=\'alert alert-danger\'>Gagal memuat gambar</div>'">
+                     onerror="this.parentElement.innerHTML='<div class=\'alert alert-danger m-3\'><i class=\'bi bi-x-circle\'></i> Gagal memuat gambar. Path: ${filename}</div>'">
             `;
         } else {
             // Untuk PDF dan file lainnya
@@ -670,14 +697,15 @@ if ($result_stats) {
                 previewContent.innerHTML = `
                     <iframe src="${filePath}" 
                             onload="this.style.display='block'" 
-                            onerror="this.parentElement.innerHTML='<div class=\'alert alert-danger\'>Gagal memuat PDF. <a href=\'${filePath}\' target=\'_blank\'>Buka di tab baru</a></div>'">
+                            onerror="this.parentElement.innerHTML='<div class=\'alert alert-danger m-3\'><i class=\'bi bi-x-circle\'></i> Gagal memuat PDF. <a href=\'${filePath}\' target=\'_blank\' class=\'alert-link\'>Buka di tab baru</a></div>'">
                     </iframe>
                 `;
             } else {
                 previewContent.innerHTML = `
-                    <div class="alert alert-info">
+                    <div class="alert alert-info m-3">
                         <i class="bi bi-info-circle"></i> 
                         File ini tidak dapat di-preview. Silakan download untuk melihat isinya.
+                        <br><small class="text-muted">Path: ${filename}</small>
                     </div>
                 `;
             }

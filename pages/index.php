@@ -13,7 +13,7 @@ include '../includes/header.php';
                             <p class="lead text-white fade-text" style="font-family: 'Poppins', sans-serif;">Pendidikan Berkualitas untuk Generasi Muda</p>
                         </div>
                     </div>
-                    <div class="carousel-item" style="background: #FFFFFF; height: 100%; background-image: url('<?php echo file_exists('../img/guru.png') ? '../img/guru.png' : 'https://via.placeholder.com/1200x800'; ?>'); background-size: cover; background-position: center;">
+                    <div class="carousel-item" style="background: #FFFFFF; height: 100%; background-image: url('<?php echo file_exists('../img/foto3.png') ? '../img/foto3.png' : 'https://via.placeholder.com/1200x800'; ?>'); background-size: cover; background-position: center;">
                         <div class="carousel-caption d-none d-md-block" style="top: 50%; transform: translateY(-50%);">
                             <h1 class="display-3 fw-bold text-white fade-text" style="font-family: 'Poppins', sans-serif;">Ceria Belajar Bersama</h1>
                             <p class="lead text-white fade-text" style="font-family: 'Poppins', sans-serif;">Lingkungan Ramah untuk Anak-Anak</p>

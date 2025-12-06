@@ -41,11 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ob_end_clean();
 
         if ($user['role'] === 'admin') {
+            session_regenerate_id(true);
             $_SESSION['admin_username'] = $user['username'];
             $_SESSION['admin_id'] = $user['id'];
+            $_SESSION['admin_foto'] = $user['foto']; // harus ada
             header("Location: /project-semester-3-/admin/admin_dashboard.php");
             exit;
         }
+
 
         header("Location: /project-semester-3-/pages/index.php");
         exit;
@@ -57,163 +60,164 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login - TK Pertiwi</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - TK Pertiwi</title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
-<style>
-    body {
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: linear-gradient(180deg, #f9fcff 0%, #e7f1ff 100%);
-        font-family: 'Poppins', sans-serif;
-    }
+    <style>
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(180deg, #f9fcff 0%, #e7f1ff 100%);
+            font-family: 'Poppins', sans-serif;
+        }
 
-    .login-card {
-        width: 450px;
-        padding: 40px;
-        border-radius: 30px;
-        background: rgba(255, 255, 255, 0.25);
-        backdrop-filter: blur(30px);
-        -webkit-backdrop-filter: blur(30px);
-        border: 1.5px solid rgba(255, 255, 255, 0.55);
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
-        transition: .3s ease;
-    }
+        .login-card {
+            width: 450px;
+            padding: 40px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1.5px solid rgba(255, 255, 255, 0.55);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+            transition: .3s ease;
+        }
 
-    .login-card:hover {
-        background: rgba(255, 255, 255, 0.32);
-        border: 1.5px solid rgba(255, 255, 255, 0.75);
-        transform: scale(1.015);
-    }
+        .login-card:hover {
+            background: rgba(255, 255, 255, 0.32);
+            border: 1.5px solid rgba(255, 255, 255, 0.75);
+            transform: scale(1.015);
+        }
 
-    .login-card h2 {
-        font-weight: 700;
-        text-align: center;
-        margin-bottom: 25px;
-        color: #003366;
-    }
+        .login-card h2 {
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 25px;
+            color: #003366;
+        }
 
-    .form-control {
-        padding-left: 45px;
-        height: 45px;
-        border-radius: 12px;
-        border: 1px solid #ccc;
-        font-size: 16px;
-        background: rgba(255, 255, 255, 0.55);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-    }
+        .form-control {
+            padding-left: 45px;
+            height: 45px;
+            border-radius: 12px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
 
-    .form-control:focus {
-        border: 1px solid #0066ff;
-        background: rgba(255, 255, 255, 0.75);
-        box-shadow: 0 0 8px rgba(0, 110, 255, 0.3);
-    }
+        .form-control:focus {
+            border: 1px solid #0066ff;
+            background: rgba(255, 255, 255, 0.75);
+            box-shadow: 0 0 8px rgba(0, 110, 255, 0.3);
+        }
 
-    .icon-input {
-        position: absolute;
-        left: 15px;
-        top: 10px;
-        font-size: 20px;
-        color: #324b81;
-    }
+        .icon-input {
+            position: absolute;
+            left: 15px;
+            top: 10px;
+            font-size: 20px;
+            color: #324b81;
+        }
 
-    .toggle-eye {
-        position: absolute;
-        right: 15px;
-        top: 10px;
-        font-size: 20px;
-        cursor: pointer;
-        color: #324b81;
-    }
+        .toggle-eye {
+            position: absolute;
+            right: 15px;
+            top: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            color: #324b81;
+        }
 
-    .btn-login {
-        width: 100%;
-        height: 50px;
-        border-radius: 12px;
-        background: #005BBB;
-        color: white;
-        font-size: 18px;
-        font-weight: 600;
-        border: none;
-        transition: .25s ease;
-    }
+        .btn-login {
+            width: 100%;
+            height: 50px;
+            border-radius: 12px;
+            background: #005BBB;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            border: none;
+            transition: .25s ease;
+        }
 
-    .btn-login:hover {
-        background: #004099;
-        transform: scale(1.03);
-    }
+        .btn-login:hover {
+            background: #004099;
+            transform: scale(1.03);
+        }
 
-    .error {
-        text-align: center;
-        color: red;
-        margin-bottom: 10px;
-    }
-</style>
+        .error {
+            text-align: center;
+            color: red;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="login-card">
-    <h2>Login Akun</h2>
+    <div class="login-card">
+        <h2>Login Akun</h2>
 
-    <?php if ($error): ?>
-        <p class="error"><?= $error ?></p>
-    <?php endif; ?>
+        <?php if ($error): ?>
+            <p class="error"><?= $error ?></p>
+        <?php endif; ?>
 
-    <form method="POST">
+        <form method="POST">
 
-        <label>Username / Email</label>
-        <div class="position-relative mb-3">
-            <i class="bi bi-person icon-input"></i>
-            <input type="text" name="login" class="form-control" required
-                   value="<?= $loginValue ?>">
-        </div>
+            <label>Username / Email</label>
+            <div class="position-relative mb-3">
+                <i class="bi bi-person icon-input"></i>
+                <input type="text" name="login" class="form-control" required value="<?= $loginValue ?>">
+            </div>
 
-        <label>Password</label>
-        <div class="position-relative mb-4">
-            <i class="bi bi-lock icon-input"></i>
+            <label>Password</label>
+            <div class="position-relative mb-4">
+                <i class="bi bi-lock icon-input"></i>
 
-            <input type="password" name="password" id="passwordField" class="form-control" required>
+                <input type="password" name="password" id="passwordField" class="form-control" required>
 
-            <!-- Show / Hide Password -->
-            <i class="bi bi-eye toggle-eye" id="togglePassword"></i>
-        </div>
+                <!-- Show / Hide Password -->
+                <i class="bi bi-eye toggle-eye" id="togglePassword"></i>
+            </div>
 
-        <button class="btn-login" type="submit">Login</button>
+            <button class="btn-login" type="submit">Login</button>
 
-        <p class="text-center mt-3">
-            Lupa password? <a href="/project-semester-3-/pages/forgot_password.php">Klik di sini</a>
-        </p>
+            <p class="text-center mt-3">
+                Lupa password? <a href="/project-semester-3-/pages/forgot_password.php">Klik di sini</a>
+            </p>
 
-        <p class="text-center">
-            Belum punya akun? <a href="register.php" class="fw-bold">Daftar di sini</a>
-        </p>
+            <p class="text-center">
+                Belum punya akun? <a href="register.php" class="fw-bold">Daftar di sini</a>
+            </p>
 
-    </form>
-</div>
+        </form>
+    </div>
 
-<!-- SCRIPT SHOW/HIDE PASSWORD -->
-<script>
-document.getElementById("togglePassword").addEventListener("click", function () {
-    const passwordField = document.getElementById("passwordField");
+    <!-- SCRIPT SHOW/HIDE PASSWORD -->
+    <script>
+        document.getElementById("togglePassword").addEventListener("click", function () {
+            const passwordField = document.getElementById("passwordField");
 
-    const type = passwordField.type === "password" ? "text" : "password";
-    passwordField.type = type;
+            const type = passwordField.type === "password" ? "text" : "password";
+            passwordField.type = type;
 
-    this.classList.toggle("bi-eye");
-    this.classList.toggle("bi-eye-slash");
-});
-</script>
+            this.classList.toggle("bi-eye");
+            this.classList.toggle("bi-eye-slash");
+        });
+    </script>
 
-<?php ob_end_flush(); ?>
+    <?php ob_end_flush(); ?>
 </body>
+
 </html>
